@@ -53,7 +53,7 @@ responses {
     submitted_at: DATE
 }
 
-progress {
+studentCourses {
     user_id: MONGO_ID,
     course_id: MONGO_ID,
     completion_percentage: FLOAT,
