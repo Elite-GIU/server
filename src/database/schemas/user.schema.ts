@@ -15,7 +15,7 @@ export class User extends Document {
   @Prop({ required: true, enum: ['admin', 'instructor', 'student'] })
   role: string;
 
-  @Prop({ type: [String], default: [] })
+  @Prop({ type: [String], default: [], required: true })
   preferences: string[];
 }
 
