@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppConfig } from './config/app.config';
-import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 
 async function bootstrap() {
@@ -12,16 +12,18 @@ async function bootstrap() {
   app.setGlobalPrefix(AppConfig.apiPrefix);
 
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Automatically strip properties that are not part of the DTO
-    forbidNonWhitelisted: true, // Throw an error if non-whitelisted properties are present
-    transform: true, // Automatically transform payloads to DTO instances
+    whitelist: true, 
+    forbidNonWhitelisted: true, 
+    transform: true, 
   }));
+  
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API documentation for the project')
     .setVersion('1.0')
-    .addBearerAuth() // Enable JWT or other auth types if needed
+    .addBearerAuth() 
     .build();
   
   const documentFactory = () => SwaggerModule.createDocument(app, config);

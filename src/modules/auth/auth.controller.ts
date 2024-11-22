@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   ApiBearerAuth,
@@ -25,6 +25,13 @@ export class AuthController {
     return this.authService.register(userData);
   }
 
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Verification token is required');
+    }
+    return await this.authService.verifyEmail(token);
+  }
   // POST /auth/login - Login an existing user and get JWT
   @Post('login')
   @ApiOperation({ summary: 'Login' })

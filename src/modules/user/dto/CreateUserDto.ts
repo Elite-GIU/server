@@ -1,5 +1,4 @@
-import { IsString, IsEmail, IsEnum, IsArray, ArrayNotEmpty, IsOptional, IsNotEmpty } from 'class-validator';;
-
+import { IsString, IsEmail, IsEnum, IsArray, ArrayNotEmpty, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -20,6 +19,10 @@ export class CreateUserDto {
 
   @IsArray()
   @ArrayNotEmpty()
-  @IsOptional()
+  @IsNotEmpty()
   preferences?: string[];
+
+  @IsString()
+  @IsOptional()
+  emailVerificationToken?: string; // Add this line
 }
