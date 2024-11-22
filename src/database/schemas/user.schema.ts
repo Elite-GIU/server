@@ -18,11 +18,17 @@ export class User extends Document {
   @Prop({ type: [String], default: [], required: true })
   preferences: string[];
 
-  @Prop({ default: false, required: true }) 
+  @Prop({ default: false, required: true })
   isEmailVerified: boolean;
 
   @Prop({ required: false })
-  emailVerificationToken: string;
+  emailVerificationOtp: string;
+
+  @Prop({ required: false })
+  emailVerificationOtpCreatedAt: Date;
+  
+  @Prop({ required: false })
+  emailVerificationOtpExpiresAt: Date; 
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
