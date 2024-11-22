@@ -15,8 +15,14 @@ export class User extends Document {
   @Prop({ required: true, enum: ['admin', 'instructor', 'student'] })
   role: string;
 
-  @Prop({ type: [String], default: [] })
+  @Prop({ type: [String], default: [] , required: true })
   preferences: string[];
+
+  @Prop({ default: false, required: true }) 
+  isEmailVerified: boolean;
+
+  @Prop({ required: false })
+  emailVerificationToken: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
