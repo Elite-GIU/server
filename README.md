@@ -69,6 +69,21 @@ logs {
     type: STRING #auth, general
 }
 
+chat {
+    courseId: MONGO_ID,
+    senderId: MONGO_ID,
+    message: STRING,
+    timestamp: DATE
+}
+
+notification {
+    userId: MONGO_ID,
+    title: STRING,
+    message: STRING,
+    type: STRING
+    timestamp: DATE
+}
+
 ```
 **Folder Structure** 
 ```
