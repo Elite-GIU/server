@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   InternalServerErrorException,
+  HttpException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -15,25 +16,34 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
+  private readonly BASE_URL = process.env.BASE_URL || '';
+  private readonly API_PREFIX = process.env.API_PREFIX || '';
+  private readonly SECRET_PASSWORD = process.env.SECRET_PASSWORD || '';
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
-  ) {}
-   
-  // Method to register a new user
+  ) {
+    this.validateEnvironment();
+  }
+
+  // Validate required environment variables
+  private validateEnvironment() {
+    if (!this.BASE_URL || !this.API_PREFIX || !this.SECRET_PASSWORD) {
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        errorCode: 'CONFIGURATION_ERROR',
+        message: 'Environment variables are not properly configured.',
+      });
+    }
+  }
+
+  // Register a new user
   async register(userData: RegisterUserDto) {
     const { email, password, name, role, preferences } = userData;
 
     try {
-      // Check if the email is already in use
-      const existingUser = await this.userService.findByEmail(email);
-      if (existingUser) {
-        throw new BadRequestException({
-          statusCode: 400,
-          errorCode: 'USER_ALREADY_EXISTS',
-          message: 'The email is already registered. Please use a different email.',
-        });
-      }
+      await this.validateUserUniqueness(email);
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const emailVerificationToken = uuidv4();
@@ -54,6 +64,9 @@ export class AuthService {
         message: 'Registration successful! Please verify your email to activate your account.',
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error; // Preserve specific HTTP exceptions
+      }
       throw new InternalServerErrorException({
         statusCode: 500,
         errorCode: 'REGISTRATION_ERROR',
@@ -62,13 +75,21 @@ export class AuthService {
     }
   }
 
-  // Method to send a verification email
-  private async sendVerificationEmail(email: string, token: string) {
-    const BASE_URL = process.env.BASE_URL
-    const API_PREFIX = process.env.API_PREFIX
-    const SECRET_PASSWORD = process.env.SECRET_PASSWORD
+  // Verify user uniqueness by email
+  private async validateUserUniqueness(email: string) {
+    const existingUser = await this.userService.findByEmail(email);
+    if (existingUser) {
+      throw new BadRequestException({
+        statusCode: 400,
+        errorCode: 'USER_ALREADY_EXISTS',
+        message: 'The email is already registered. Please use a different email.',
+      });
+    }
+  }
 
-    const verificationUrl = `${BASE_URL}${API_PREFIX}/auth/verify-email?token=${token}`;
+  // Send verification email
+  private async sendVerificationEmail(email: string, token: string) {
+    const verificationUrl = `${this.BASE_URL}${this.API_PREFIX}/auth/verify-email?token=${token}`;
     const emailBody = {
       to: email,
       subject: 'Email Verification',
@@ -76,7 +97,7 @@ export class AuthService {
     };
 
     const headers = {
-      Authorization: `Bearer ${SECRET_PASSWORD}`,
+      Authorization: `Bearer ${this.SECRET_PASSWORD}`,
       'Content-Type': 'application/json',
     };
 
@@ -91,7 +112,7 @@ export class AuthService {
     }
   }
 
-  // Method to verify the email
+  // Verify email
   async verifyEmail(token: string) {
     try {
       const user = await this.userService.findOneByToken(token);
@@ -112,37 +133,24 @@ export class AuthService {
         message: 'Email verified successfully. You can now log in.',
       };
     } catch (error) {
-      throw error instanceof NotFoundException
-        ? error
-        : new InternalServerErrorException({
-            statusCode: 500,
-            errorCode: 'EMAIL_VERIFICATION_ERROR',
-            message: 'An error occurred during email verification. Please try again later.',
-          });
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        errorCode: 'EMAIL_VERIFICATION_ERROR',
+        message: 'An error occurred during email verification. Please try again later.',
+      });
     }
   }
 
-  // Method to log in a user
+  // Log in a user
   async login(userData: LoginUserDto) {
     const { email, password } = userData;
 
     try {
       const user = await this.userService.findByEmail(email);
-      if (!user) {
-        throw new UnauthorizedException({
-          statusCode: 401,
-          errorCode: 'INVALID_CREDENTIALS',
-          message: 'Invalid email or password.',
-        });
-      }
-
-      if (!user.isEmailVerified) {
-        throw new UnauthorizedException({
-          statusCode: 401,
-          errorCode: 'EMAIL_NOT_VERIFIED',
-          message: 'Please verify your email before logging in.',
-        });
-      }
+      this.validateUserForLogin(user);
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
@@ -159,21 +167,42 @@ export class AuthService {
         data: this.generateJwt(user),
       };
     } catch (error) {
-      throw error instanceof UnauthorizedException
-        ? error
-        : new InternalServerErrorException({
-            statusCode: 500,
-            errorCode: 'LOGIN_ERROR',
-            message: 'An error occurred during login. Please try again later.',
-          });
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        errorCode: 'LOGIN_ERROR',
+        message: 'An error occurred during login. Please try again later.',
+      });
     }
   }
 
-  // Method to generate a JWT token
+  // Validate user for login
+  private validateUserForLogin(user: any) {
+    if (!user) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        errorCode: 'INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      });
+    }
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        errorCode: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email before logging in.',
+      });
+    }
+  }
+
+  // Generate a JWT token
   private generateJwt(user: any) {
     const payload = { userId: user._id, email: user.email, role: user.role };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: '1h', 
+      }),
     };
   }
 }
