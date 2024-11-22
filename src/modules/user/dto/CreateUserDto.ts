@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsEnum, IsArray, ArrayNotEmpty, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsEmail, IsEnum, IsArray, ArrayNotEmpty, IsOptional, IsNotEmpty, IsDateString } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -24,5 +24,13 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  emailVerificationToken?: string; // Add this line
+  emailVerificationOtp?: string;
+
+  @IsOptional()  
+  @IsDateString()
+  emailVerificationOtpCreatedAt?: Date;
+  
+  @IsOptional()
+  @IsDateString()
+  emailVerificationOtpExpiresAt?: Date;
 }

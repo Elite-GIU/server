@@ -1,15 +1,13 @@
-import { Controller, Post, Get, Body, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
-  ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiOkResponse,
-  ApiBody
 } from '@nestjs/swagger';
 import { RegisterUserDto } from './dto/RegisterUserDto';
 import { LoginUserDto } from './dto/LoginUserDto';
+import { VerifyEmailDto } from './dto/VerifyEmailDto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -20,23 +18,34 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register' })
   @ApiResponse({ status: 201, description: 'Account created successfully' })
-  @ApiResponse({ status: 400, description: 'Data entered is incorrect' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async register(@Body() userData: RegisterUserDto) {
     return this.authService.register(userData);
   }
 
-  @Get('verify-email')
-  async verifyEmail(@Query('token') token: string) {
-    if (!token) {
-      throw new BadRequestException('Verification token is required');
-    }
-    return await this.authService.verifyEmail(token);
+  // PUT /auth/verify-email - Verify email using OTP
+  @Put('verify-email')
+  @ApiOperation({ summary: 'Verify Email with OTP' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid OTP or email' })
+  async verifyEmail(@Body() verifyEmailData: VerifyEmailDto) { 
+    return this.authService.verifyEmail(verifyEmailData);
   }
-  // POST /auth/login - Login an existing user and get JWT
+
+  // POST /auth/resend-otp - Resend OTP for email verification
+  @Post('resend-otp')
+  @ApiOperation({ summary: 'Resend OTP for Email Verification' })
+  @ApiResponse({ status: 200, description: 'OTP resent successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid email' })
+  async resendEmailOtp(@Body() userdata: LoginUserDto) {
+    return this.authService.resendEmailOtp(userdata);
+  }
+
+  // POST /auth/login - Login an existing user
   @Post('login')
   @ApiOperation({ summary: 'Login' })
-  @ApiResponse({ status: 201, description: 'User logged in successfully' })
-  @ApiResponse({ status: 400, description: 'Data entered is incorrect' })
+  @ApiResponse({ status: 200, description: 'User logged in successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
   async login(@Body() userData: LoginUserDto) {
     return this.authService.login(userData);
   }
