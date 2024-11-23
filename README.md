@@ -1,5 +1,270 @@
 Spread Sheet To Track Progress: [Click here to view the Google Spreadsheet](https://docs.google.com/spreadsheets/d/1_q3zo1ZCfkuNRDbKUqlCqMfe1cYqfyDMYpqZHDAgC_g/)
 
+**Endpoints**
+
+**Abdelrahman Samir:**
+
+`POST /instructor/assign:`
+
+Assign a specific student using their id and/or email to a course by a specific instructor.
+No need to check if a course is by a specific instructor, will be handled by a drop down list
+in the frontend and no need to implement GET instructor/courses since it's done down.
+
+Acceptance Criteria:
+- course is added to the StudentCourse table
+- validation on student id/email
+- extra (not required): a request is sent to the user and he accepts the invitation and joins the course
+
+`GET /courses`
+
+Acceptance criteria:
+- show all courses with their details (add pagination if possible)
+
+`GET /instructors`
+
+Acceptance criteria:
+- show all instructors (add pagination if possible)
+
+
+`POST courses/id/assign`
+
+A student can assign himself to a course, same service/logic as instructor assign but a student assigns himself
+
+Acceptance criteria:
+- course is added to the StudentCourse table
+
+&nbsp;
+
+**Omar Sherif:**
+
+`POST instructor/courses`
+
+Create a new course
+
+Acceptance Criteria:
+- need to validate fields for course
+- make sure course is not duplicated
+
+`GET instructor/courses`
+
+get all courses by a specific instructor
+
+Acceptance criteria:
+- use currently logged in instructor to get his courses
+
+`PUT instructor/courses/id`
+
+Update course info, not modules
+
+Acceptance criteria:
+- ability to change description, category, difficulty of the course
+
+
+&nbsp;
+
+
+
+**Mohamad Hossam:**
+
+`GET student/learning-path`
+
+Suggest a learning path for the student
+
+Acceptance Criteria:
+- suggest courses based on preferences of students arranged
+according to difficulty of the course in increasing order
+
+`GET student/courses`
+
+get all courses by a specific student
+
+Acceptance criteria:
+- use currently logged in student to get his courses
+
+`GET student/courses/id`
+
+get a specific course by a specific student
+
+Acceptance criteria:
+- use currently logged in student to get a course by id
+- show all modules under this course as part of the returned course content
+
+`GET student/course/id/modules/id`
+
+show content of a specific module
+
+Acceptance criteria:
+- list the content + available quiz (show if there is quiz or not)
+
+
+&nbsp;
+
+
+**Abdelrahman Elnagar:**
+
+`POST instructor/courses/id/modules`
+
+Create a new module on a specific course
+
+Acceptance Criteria:
+- validate that course belongs to instructor (through guards, coordinate with momen)
+- add a new entry in modules
+
+`POST instructor/courses/id/modules/id/module`
+
+Upload content on a specific module
+
+Acceptance Criteria:
+- handle upload files like urls, txt, pdf, (mp4).
+- Validate uploads and check for possible errors
+- update module content array to include location of new conetnt
+
+`POST instructor/courses/id/modules/id/quiz`
+
+Create a new randomized quiz
+
+Acceptance Criteria:
+- choose 10 random questions from questionbank
+- add them to the database with their answers
+
+`PUT instructor/courses/id/modules/id/quiz`
+
+Updated a specific quiz
+
+Acceptance Criteria:
+- change a question with the other or generate whole new 10 questions
+- updated database entry
+
+
+&nbsp;
+
+
+**Hussein Mansour:**
+
+`GET student/courses/id/modules/id/quiz`
+
+Show the quiz on the module
+
+Acceptance Criteria:
+- display questions without the answers. only show options
+
+`POST student/courses/id/modules/id/quiz`
+
+Submit quiz solution
+
+Acceptance Criteria:
+- for each question id, there's an answer.
+- Collect all answers and add them to the response entity
+- calculate the score
+- update the studentCourse with extra progress since
+module is done (if grade >50) and add a new date in the last_accessed array
+
+`GET student/courses/id/modules/id/quiz/feedback`
+
+Show feedback on quiz
+
+Acceptance Criteria:
+- show wrong answered questions and their correct answer
+- Display the score
+
+
+&nbsp;
+
+
+**Momen Ashraf:**
+
+`guards`
+
+Acceptance Criteria:
+- student is registered in the course
+- instructor is actually the instructor of a specific course
+- authorization in general
+
+`GET /logs
+POST /logs
+`
+
+Acceptance Criteria:
+- handle adding logs for every wrong log in
+
+&nbsp;
+
+
+**Alaa Ashraf:**
+
+
+`GET chat/course/id`
+
+display chat on a specific course
+
+Acceptance Criteria:
+- currently logged in user is authorized to see chat
+- display chat ordered ascendingly by time
+- display name of each person sending a chat (add instructor next to name of instructor)
+
+`POST chat/course/id`
+
+student/instructor can send chat on a specific course
+
+Acceptance Criteria:
+- currently logged in user is authorized to send chat
+
+
+&nbsp;
+
+
+**Sarah Ahmed:**
+
+
+`GET student/dashboard`
+
+Get the student dashboard 
+
+Acceptance Criteria:
+- show courses enrolled + progress, average grade, last accessed, accessed in last month
+
+`GET student/dashboard/quiz`
+
+Get all quizzes done by the student
+
+Acceptance Criteria:
+-  get logged in student
+-  display all quizzes done and grade in each
+-  display module + course
+
+`GET instructor/dashboard`
+
+Get the instructor dashboard
+
+Acceptance Criteria:
+-  get all courses of instructor + nr of students enrolled
+
+`GET instructor/dashboard/course/id`
+
+Get the instructor course id dashboard
+
+Acceptance Criteria:
+-  get course + average grade + best grade + lowest grade
+-  do that for each module seperately
+
+
+`GET instructor/dashboard/course/id/students`
+
+Display all students enrolled in a course + their average grade
+
+Acceptance Criteria:
+-  show all students in a course (paginated if possible)
+-  show the avg grade of each student individually
+
+
+
+&nbsp;
+&nbsp;
+
+
+
+
+
 **Database Scheme**
 ```
 users {
