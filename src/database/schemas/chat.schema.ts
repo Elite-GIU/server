@@ -9,6 +9,12 @@ export class Chat extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   senderId: Types.ObjectId;
 
+  @Prop({ type: String, ref: 'User', required: true })
+  senderName: string;
+
+  @Prop({ type: String, ref: 'User', required: true })
+  senderRole: string;
+
   @Prop({ type: String, required: true })
   message: string;
 }
