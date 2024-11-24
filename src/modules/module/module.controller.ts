@@ -10,7 +10,7 @@ export class ModuleController {
 
   @Get('student/course/:courseId/modules/:moduleId')
   getModuleContent(
-    @GetUser('user_id') userId: string,
+    @GetUser('userId') userId: string,
     @Param('courseId') courseId: string,
     @Param('moduleId') moduleId: string,
   ) {
