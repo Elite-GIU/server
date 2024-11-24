@@ -185,7 +185,7 @@ export class AuthService {
       const currentTime = new Date().getTime();
       const otpCreatedAt = new Date(user.emailVerificationOtpCreatedAt).getTime();
       const otpTimeout = 60000; // 1 minute
-     
+    
       // Check if 1 minute has passed after OTP expiry
       if (user.emailVerificationOtpExpiresAt && currentTime < otpCreatedAt + otpTimeout) {
         throw new BadRequestException({
