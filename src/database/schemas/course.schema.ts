@@ -12,8 +12,8 @@ export class Course extends Document {
   @Prop({ required: true })
   category: string;
 
-  @Prop({ required: true })
-  difficulty_level: string;
+  @Prop({ required: true, min: 0, max: 3 })
+  difficulty_level: number;
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
