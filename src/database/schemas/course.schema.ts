@@ -12,7 +12,7 @@ export class Course extends Document {
   @Prop({ required: true })
   category: string;
 
-  @Prop({ required: true, min: 0, max: 3 })
+  @Prop({ required: true, min: 1, max: 3 })
   difficulty_level: number;
 }
 
