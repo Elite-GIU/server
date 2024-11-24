@@ -8,7 +8,7 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
-  @Get('learning-path')
+  @Get('student/learning-path')
   getLearningPath(@GetUser('_id') userId: string) {
     return this.studentService.getLearningPath(userId);
   }

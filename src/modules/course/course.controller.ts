@@ -8,12 +8,12 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 export class CourseController {
     constructor(private readonly courseService: CourseService) {}
 
-    @Get('courses')
+    @Get('student/courses')
     getStudentCourses(@GetUser('_id') userId: string) {
       return this.courseService.getStudentCourses(userId);
     }
   
-    @Get('courses/:courseId')
+    @Get('student/courses/:courseId')
     getStudentCourseById(
       @GetUser('_id') userId: string,
       @Param('courseId') courseId: string,

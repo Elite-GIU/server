@@ -8,7 +8,7 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 export class ModuleController {
   constructor(private readonly moduleService: ModuleService) {}
 
-  @Get('courses/:courseId/modules/:moduleId')
+  @Get('student/course/:courseId/modules/:moduleId')
   getModuleContent(
     @GetUser('_id') userId: string,
     @Param('courseId') courseId: string,
