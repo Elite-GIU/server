@@ -9,13 +9,13 @@ export class CourseController {
     constructor(private readonly courseService: CourseService) {}
 
     @Get('student/courses')
-    getStudentCourses(@GetUser('_id') userId: string) {
+    getStudentCourses(@GetUser('user_id') userId: string) {
       return this.courseService.getStudentCourses(userId);
     }
   
     @Get('student/courses/:courseId')
     getStudentCourseById(
-      @GetUser('_id') userId: string,
+      @GetUser('user_id') userId: string,
       @Param('courseId') courseId: string,
     ) {
       return this.courseService.getStudentCourseWithModules(userId, courseId);

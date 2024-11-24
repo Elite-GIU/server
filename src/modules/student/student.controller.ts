@@ -9,7 +9,7 @@ export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
   @Get('student/learning-path')
-  getLearningPath(@GetUser('_id') userId: string) {
+  getLearningPath(@GetUser('user_id') userId: string) {
     return this.studentService.getLearningPath(userId);
   }
 }
