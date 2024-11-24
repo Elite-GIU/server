@@ -116,7 +116,7 @@ Acceptance Criteria:
 - validate that course belongs to instructor (through guards, coordinate with momen)
 - add a new entry in modules
 
-`POST instructor/courses/id/modules/id/module`
+`POST instructor/courses/id/modules/id/upload`
 
 Upload content on a specific module
 
@@ -280,7 +280,11 @@ users {
     password: STRING, #Not the actual password, the hash of it
     role: STRING, #admin, instructor, student
     created_at: DATE,
-    preferences: STRING[] #array of strings of preferred categories (subjects)
+    preferences: STRING[] #array of strings of preferred categories (subjects),
+    isEmailVerified: boolean,
+    emailVerificationOtp: STRING,
+    emailVerificationOtpCreatedAt: DATE,
+    emailVerificationOtpExpiresAt: DATE
 }
 
 courses {
