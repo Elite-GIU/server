@@ -126,23 +126,29 @@ Acceptance Criteria:
 - Validate uploads and check for possible errors
 - update module content array to include location of new conetnt
 
-`POST instructor/courses/id/modules/id/quiz`
+`POST instructor/courses/id/modules/id/questionbank`
 
-Create a new randomized quiz
-
-Acceptance Criteria:
-
-- choose 10 random questions from questionbank
-- add them to the database with their answers
-
-`PUT instructor/courses/id/modules/id/quiz`
-
-Updated a specific quiz
+Create a new question on the questionbank
 
 Acceptance Criteria:
 
-- change a question with the other or generate whole new 10 questions
-- updated database entry
+- fill all fields, add difficulty
+
+`PUT instructor/courses/id/modules/id/question/id`
+
+Updated a specific question
+
+Acceptance Criteria:
+
+- change a question in the questionbank of the module
+
+`DELTEE instructor/courses/id/modules/id/question/id`
+
+Delete a specific question
+
+Acceptance Criteria:
+
+- delete a question from the questionbank
 
 &nbsp;
 
@@ -150,7 +156,7 @@ Acceptance Criteria:
 
 `GET student/courses/id/modules/id/quiz`
 
-Show the quiz on the module
+Create a new quiz using 10 randomized questions from module questionbank
 
 Acceptance Criteria:
 
@@ -305,28 +311,29 @@ modules {
     created_at: DATE
 }
 
-quizzes {
-    quiz_id: MONGO_ID (PRIMARY_KEY),
-    module_id: MONGO_ID,
-    questions: OBJECT[]
-    # question {
-        question_id: MONGO_ID (PRIMARY_KEY),
-        quiz_id: MONGO_ID,
-        question: STRING,
-        choices: STRING[4],
-        right_choice: STRING
-    }
-    created_at: DATE,
+ questions: {
+    question_id: "MONGO_ID (PRIMARY_KEY)",
+    question: "STRING",
+    choices: "STRING[4]", # four possible answers
+    right_choice: "STRING", # the correct answer
+    difficulty: number (min = 1, max = 3)
+    created_at: "DATE"
 }
 
-responses {
+questionbank: {
+    module_id: "MONGO_ID", # reference to Modules.module_id
+    questions: ["MONGO_ID"] # references to Modules.question_id
+},
+
+quizResponse {
     response_id: MONGO_ID (PRIMARY_KEY),
     user_id: MONGO_ID,
-    quiz_id: MONGO_ID,
+    questions: ARRAY[] MONGOID # reference the mongoID of the questions in the questionbanck
     answers: STRING[],
-    score: INT,
+    score: NUMBER,
     submitted_at: DATE
 }
+
 
 studentCourses {
     user_id: MONGO_ID,
