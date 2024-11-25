@@ -13,6 +13,14 @@ export class InstructorService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
+  async getAllInstructors(): Promise<User[]> {
+    const instructors = await this.userModel.find({ role: 'instructor' });
+    if (!instructors || instructors.length === 0) {
+      throw new NotFoundException('No instructors found');
+    }
+    return instructors;
+  }
+
   async assignStudentToCourse(studentIdentifier: string, courseId: string): Promise<StudentCourse> {
     // Verify the course exists
     const course = await this.courseModel.findById(courseId);
