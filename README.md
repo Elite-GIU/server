@@ -361,8 +361,9 @@ roomMessages{
   message_id: MONGO_ID (PRIMARY KEY),
   room_id: MONGO_ID,
   sender_id: MONGO_ID,
-  sender_name: STRING,
-  message: STRING
+  parent_id: MONGO_ID,
+  sent_at: DATE,
+  content: STRING
 }
 
 forums {
@@ -374,38 +375,26 @@ forums {
 threads {
   thread_id: MONGO_ID (PRIMARY KEY),
   forum_id: MONGO_ID, # reference it's parent forum
-  created_by: MONGO_ID,
+  creator_id: MONGO_ID,
   created_at: DATE,
   title: String,
-  description: String,
-  "reactions": { // Optional 
-    "upvotes": 10,
-    "downvotes": 2
-  }
+  description: STRING,
 }
 
-messages {
+threadMessages {
   message_id: MONGO_ID (PRIMARY KEY),
   thread_id: MONGO_ID,
-  created_by: MONGO_ID,
+  sender_id: MONGO_ID,
   created_at: DATE,
   content: String,
-  "reactions": { // optional
-    "upvotes": 5,
-    "downvotes": 0
-  }
 }
 
-replies {
+threadMessageReplies {
   reply_id: MONGO_ID (PRIMARY KEY),
   message_id: MONGO_ID,
-  created_by: MONGO_ID,
+  sender_id: MONGO_ID,
   created_at: DATE,
   content: String,
-  "reactions": { 
-    "upvotes": 5,
-    "downvotes": 0
-  }
 }
 
 notification {
