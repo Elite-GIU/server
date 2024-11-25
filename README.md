@@ -351,16 +351,33 @@ logs {
     type: STRING #auth, general
 }
 
-forum {
-  forum_id: MONGO_ID
-  course_id: MONGO_ID
+rooms{
+  room_id: MONGO_ID (PRIMARY KEY),
+  course_id: MONGO_ID,
+  instructor_id: MONGO_ID
+}
+
+roomMessages{
+  message_id: MONGO_ID (PRIMARY KEY),
+  room_id: MONGO_ID,
+  sender_id: MONGO_ID,
+  sender_name: STRING,
+  message: STRING
+}
+
+forums {
+  forum_id: MONGO_ID (PRIMARY KEY),
+  course_id: MONGO_ID,
+  instructor_id: MONGO_ID
 }
 
 threads {
-  thread_id: MONGO_ID
-  created_by: MONGO_ID
-  title: String
-  forum_id: MONGO_ID # reference it's parent forum
+  thread_id: MONGO_ID (PRIMARY KEY),
+  forum_id: MONGO_ID, # reference it's parent forum
+  created_by: MONGO_ID,
+  created_at: DATE,
+  title: String,
+  description: String,
   "reactions": { // Optional 
     "upvotes": 10,
     "downvotes": 2
@@ -368,11 +385,11 @@ threads {
 }
 
 messages {
-  message_id: MONGO_ID
-  content: String
-  created_by: MONGO_ID
-  thread_id: MONGO_ID
-  created_at: DATE
+  message_id: MONGO_ID (PRIMARY KEY),
+  thread_id: MONGO_ID,
+  created_by: MONGO_ID,
+  created_at: DATE,
+  content: String,
   "reactions": { // optional
     "upvotes": 5,
     "downvotes": 0
@@ -380,17 +397,16 @@ messages {
 }
 
 replies {
-  reply_id: MONGO_ID
-  message_id: MONGO_ID
-  content: String
-  created_by: MONGO_ID
-  created_at: DATE
+  reply_id: MONGO_ID (PRIMARY KEY),
+  message_id: MONGO_ID,
+  created_by: MONGO_ID,
+  created_at: DATE,
+  content: String,
   "reactions": { 
     "upvotes": 5,
     "downvotes": 0
   }
 }
-
 
 notification {
     userId: MONGO_ID,
