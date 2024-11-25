@@ -21,6 +21,23 @@ export class InstructorService {
     return instructors;
   }
 
+  async getInstructorsByName(name: string): Promise<User[]> {
+    if (!name) {
+      throw new BadRequestException('Name parameter is required');
+    }
+  
+    const instructors = await this.userModel.find({
+      role: 'instructor',
+      name: { $regex: name, $options: 'i' }, // Case-insensitive name matching
+    });
+  
+    if (!instructors || instructors.length === 0) {
+      throw new NotFoundException(`No instructors found with name matching "${name}"`);
+    }
+  
+    return instructors;
+  }
+
   async assignStudentToCourse(studentIdentifier: string, courseId: string): Promise<StudentCourse> {
     // Verify the course exists
     const course = await this.courseModel.findById(courseId);

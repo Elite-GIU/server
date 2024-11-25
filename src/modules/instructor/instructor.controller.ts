@@ -1,9 +1,9 @@
-import { Controller, Post, Get, Body, UseGuards, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InstructorService } from './instructor.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { AssignStudentDto } from './dto/AssignStudentDto';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 
 
@@ -32,6 +32,36 @@ export class InstructorController {
   @ApiResponse({ status: 404, description: 'No instructors found.' })
   async getAllInstructors() {
     return await this.instructorService.getAllInstructors();
+  }
+
+
+  @Get('/:name')
+  @ApiOperation({ summary: 'Get instructors by name' })
+  @ApiParam({
+    name: 'name',
+    description: 'The name of the instructor to search for (case-insensitive)',
+    example: 'John',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of instructors matching the name successfully retrieved.',
+    schema: {
+      example: [
+        {
+          _id: '648a1e9b9f4e2d1a1b2c3d4e',
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          role: 'instructor',
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: 'No instructors found matching the name.' })
+  async getInstructorsByName(@Param('name') name: string) {
+    if (!name) {
+      throw new BadRequestException('Name parameter is required');
+    }
+    return await this.instructorService.getInstructorsByName(name);
   }
 
   @Post('assign')
