@@ -351,12 +351,46 @@ logs {
     type: STRING #auth, general
 }
 
-chat {
-    courseId: MONGO_ID,
-    senderId: MONGO_ID,
-    message: STRING,
-    timestamp: DATE
+forum {
+  forum_id: MONGO_ID
+  course_id: MONGO_ID
 }
+
+threads {
+  thread_id: MONGO_ID
+  created_by: MONGO_ID
+  title: String
+  forum_id: MONGO_ID # reference it's parent forum
+  "reactions": { // Optional 
+    "upvotes": 10,
+    "downvotes": 2
+  }
+}
+
+messages {
+  message_id: MONGO_ID
+  content: String
+  created_by: MONGO_ID
+  thread_id: MONGO_ID
+  created_at: DATE
+  "reactions": { // optional
+    "upvotes": 5,
+    "downvotes": 0
+  }
+}
+
+replies {
+  reply_id: MONGO_ID
+  message_id: MONGO_ID
+  content: String
+  created_by: MONGO_ID
+  created_at: DATE
+  "reactions": { 
+    "upvotes": 5,
+    "downvotes": 0
+  }
+}
+
 
 notification {
     userId: MONGO_ID,
