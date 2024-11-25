@@ -10,7 +10,7 @@ import { LoginUserDto } from './dto/LoginUserDto';
 import { VerifyEmailDto } from './dto/VerifyEmailDto';
 import { Public } from 'src/common/decorators/public.decorator';
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 
 export class AuthController {
