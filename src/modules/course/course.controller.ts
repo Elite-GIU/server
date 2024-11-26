@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -68,7 +69,7 @@ export class CourseController {
     try {
       return await this.courseService.assignStudentToCourse(courseId, studentId);
     } catch (error) {
-      throw new InternalServerErrorException(
+      throw new BadRequestException(
         'Failed to assign student to course: ' + error.message,
       );
     }

@@ -76,7 +76,7 @@ export class InstructorController {
       const { studentIdentifier, courseId } = assignStudentDto;
       return await this.courseService.assignStudentToCourse(courseId, studentIdentifier);
     } catch (error) {
-      throw new InternalServerErrorException('Failed to assign student: ' + error.message);
+      throw new BadRequestException('Failed to assign student: ' + error.message);
     }
   }
 }
