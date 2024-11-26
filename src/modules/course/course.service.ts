@@ -23,41 +23,6 @@ export class CourseService {
     return courses;
   }
 
-  /**
-   * Searches for courses by name, using case-insensitive matching.
-   * Throws a NotFoundException if no courses match the provided name.
-   * 
-   * @param name - The name (or partial name) of the course to search for.
-   * @returns A list of courses matching the specified name.
-   */
-  // async getCoursesByName(name: string): Promise<Course[]> {
-  //   const courses = await this.courseModel.find({
-  //     name: { $regex: name, $options: 'i' },
-  //   });
-  //   if (!courses || courses.length === 0) {
-  //     throw new NotFoundException(`No courses found with name "${name}"`);
-  //   }
-  //   return courses;
-  // }
-
-  /**
-   * Searches for courses taught by a specific instructor, using case-insensitive matching.
-   * Throws a NotFoundException if no courses are taught by the specified instructor.
-   * 
-   * @param instructor - The name of the instructor to search for.
-   * @returns A list of courses taught by the specified instructor.
-   */
-  // async getCoursesByInstructor(instructor: string): Promise<Course[]> {
-  //   const courses = await this.courseModel.find({
-  //     instructor: { $regex: instructor, $options: 'i' },
-  //   });
-  //   if (!courses || courses.length === 0) {
-  //     throw new NotFoundException(
-  //       `No courses found taught by instructor "${instructor}"`,
-  //     );
-  //   }
-  //   return courses;
-  // }
 
   /**
    * Allows a student to assign themselves to a course.
