@@ -12,7 +12,6 @@ import {
   ModuleEntity,
   ModuleSchema,
 } from '../../database/schemas/module.schema';
-import { Quiz, QuizSchema } from '../../database/schemas/quiz.schema';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -22,7 +21,6 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
       { name: StudentCourse.name, schema: StudentCourseSchema },
       { name: ModuleEntity.name, schema: ModuleSchema },
-      { name: Quiz.name, schema: QuizSchema },
     ]),
     AuthModule,
   ],

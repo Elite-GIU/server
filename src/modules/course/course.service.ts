@@ -113,4 +113,19 @@ export class CourseService {
       modules,
     };
   }
+
+  async getStudentCoursesByStatus(userId: string, status: string) {
+    const studentCourses = await this.studentCourseModel
+      .find({ 
+        user_id: userId,
+        status: status 
+      })
+      .populate('course_id');
+
+    if (!studentCourses || studentCourses.length === 0) {
+      throw new NotFoundException(`No ${status} courses found for this student`);
+    }
+
+    return studentCourses.map(studentCourse => studentCourse.course_id);
+  }
 }

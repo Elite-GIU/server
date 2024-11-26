@@ -75,15 +75,44 @@ export class CourseController {
   }
 
   @Get('student/courses')
-    getStudentCourses(@GetUser('userId') userId: string) {
-      return this.courseService.getStudentCourses(userId);
-    }
-  
-    @Get('student/courses/:courseId')
-    getStudentCourseById(
-      @GetUser('userId') userId: string,
-      @Param('courseId') courseId: string,
-    ) {
-      return this.courseService.getStudentCourseWithModules(userId, courseId);
-    }
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Get all courses for the authenticated student' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of courses for the student retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'No courses found for this student.' })
+  getStudentCourses(@GetUser('userId') userId: string) {
+    return this.courseService.getStudentCourses(userId);
+  }
+
+  @Get('student/courses/:courseId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard) 
+  @ApiOperation({ summary: 'Get course details with modules for the authenticated student' })
+  @ApiResponse({
+    status: 200,
+    description: 'Course details with modules retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Course not found for this student.' })
+  getStudentCourseById(
+    @GetUser('userId') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return this.courseService.getStudentCourseWithModules(userId, courseId);
+  }
+
+  @Get('student/courses/status/:status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Get student courses filtered by status' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of student courses by status retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'No courses found with the specified status.' })
+  getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
+    return this.courseService.getStudentCoursesByStatus(userId, status);
+  }
 }
