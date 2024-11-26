@@ -12,6 +12,7 @@ import { RoomMessageDto } from './dto/RoomMessageDto';
 @ApiTags('Chat')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@ApiResponse({ status: 401, description: 'Unauthorized' })
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 

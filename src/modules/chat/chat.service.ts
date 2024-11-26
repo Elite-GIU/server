@@ -17,7 +17,7 @@ export class ChatService {
 
   async getRoomMessages(courseId: string) {
     /*
-       // Check if the course exists
+       // Check if the course exists and student/instructor is associated with the course
        const course = await this.courseModel.findById(courseId).exec();
        if (!course) {
          throw new HttpException('Course Not Found', HttpStatus.NOT_FOUND);
@@ -26,8 +26,7 @@ export class ChatService {
     const messages = await this.roomMessageModel
       .find({ courseId })
       .populate('senderId', 'name role')
-      .sort({ createdAt: 1 })
-      .exec();
+      .sort({ createdAt: 1 });
 
     return {
       statusCode: HttpStatus.OK,
@@ -47,8 +46,11 @@ export class ChatService {
 */
       const message = await this.roomMessageModel
         .findOne({ courseId, _id: messageId })
-        .populate('senderId', 'name role')
-        .exec();
+        .populate('senderId', 'name role');
+      // Check if the message exists
+      if (!message) {
+        throw new HttpException('Message not found', HttpStatus.NOT_FOUND);
+      }
 
       return {
         statusCode: HttpStatus.OK,
@@ -79,6 +81,7 @@ export class ChatService {
         senderId,
         content,
       });
+      //Check if the user exists
 
       await this.roomMessageModel.create(message);
       return {
