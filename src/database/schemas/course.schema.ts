@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: false } })
 export class Course extends Document {
-  @Prop({ required: true })
-  instructor_id: string;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  instructorId: Types.ObjectId;
 
   @Prop({ required: true })
   description: string;
@@ -12,7 +12,7 @@ export class Course extends Document {
   @Prop({ required: true })
   category: string;
 
-  @Prop({ required: true, min: 0, max: 3 })
+  @Prop({ required: true, min: 1, max: 3 })
   difficulty_level: number;
 }
 
