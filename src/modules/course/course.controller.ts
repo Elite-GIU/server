@@ -25,7 +25,7 @@ import mongoose from 'mongoose';
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
-  @Get()
+  @Get('/courses')
   @Public()
   @ApiOperation({ summary: 'Retrieve all courses for the landing page' })
   @ApiResponse({
@@ -48,7 +48,7 @@ export class CourseController {
   }
 
 
-  @Post(':id/assign')
+  @Post('/courses:id/assign')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, StudentGuard)
   @ApiOperation({ summary: 'Assign the authenticated student to a course' })
@@ -123,7 +123,7 @@ export class CourseController {
 
         }catch(error){
 
-            throw new Error('Failed to update course: ' + error.message);
+            throw new BadRequestException('Failed to update course: ' + error.message);
         }
     }
 

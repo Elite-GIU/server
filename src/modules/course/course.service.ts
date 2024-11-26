@@ -92,7 +92,7 @@ export class CourseService {
 
   async getInstructorCourse(userId: string){
 
-    const courses = await this.courseModel.find({instructorId: new Types.ObjectId(userId)});
+    const courses = await this.courseModel.find({instructor_id: new Types.ObjectId(userId)});
 
     return courses;
 }
@@ -101,12 +101,12 @@ async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: stri
 
     const {category, description, difficulty_level, title} = createCourseDto;
 
-    const duplicated = await this.courseModel.find({instructorId: new Types.ObjectId(instructor_id), title: createCourseDto.title});
+    const duplicated = await this.courseModel.find({instructor_id: new Types.ObjectId(instructor_id), title: createCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    const newCourse = await this.courseModel.create({instructorId: new Types.ObjectId(instructor_id), category, description, difficulty_level, title});
+    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), category, description, difficulty_level, title});
 
     return newCourse;
     
@@ -121,12 +121,12 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     if(!course)
         throw new NotFoundException('Course not found');
 
-    const duplicated = await this.courseModel.find({instructorId: instuctorIdObject, title: updateCourseDto.title});
+    const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title: updateCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    if(course.instructorId !== instuctorIdObject)
+    if (!course.instructor_id.equals(instuctorIdObject))
         throw new ForbiddenException('You don\'t have access to this course');
 
     Object.assign(course, updateCourseDto);
