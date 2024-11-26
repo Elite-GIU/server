@@ -4,10 +4,10 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class ThreadMessage extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Thread', required: true })
-  threadId: Types.ObjectId;
+  thread_id: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  senderId: Types.ObjectId;
+  sender_id: Types.ObjectId;
 
   @Prop({ type: String, required: true })
   content: string;
