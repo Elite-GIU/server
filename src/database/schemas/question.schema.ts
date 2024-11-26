@@ -15,6 +15,13 @@ export class Question extends Document {
 
   @Prop({ required: true, min: 1, max: 3})
   difficulty: number;
+
+  @Prop({
+    required: true,
+    enum: ['mcq', 'true_false', 'essay','mix'],
+    default: 'mcq',
+  })
+  type: string;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
