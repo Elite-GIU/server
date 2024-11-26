@@ -37,36 +37,5 @@ export class InstructorService {
   
     return instructors;
   }
-
-  async assignStudentToCourse(studentIdentifier: string, courseId: string): Promise<StudentCourse> {
-    // Verify the course exists
-    const course = await this.courseModel.findById(courseId);
-    if (!course) throw new NotFoundException('Course not found');
-    //check if studentIdentifier is a valid email then get the student by email else get the student by id in 2 steps
-    let student;
-    if (studentIdentifier.includes('@')) {
-      student = await this.userModel.findOne({ email: studentIdentifier });
-    } else {
-      student = await this.userModel.findById(studentIdentifier);
-    }
-    if (!student) throw new NotFoundException('Student not found');
-  
-    // Check if the student is already assigned to the course
-    const existingAssignment = await this.studentCourseModel.findOne({
-      course_id: course._id,
-      user_id: student._id,
-    });
-    if (existingAssignment) throw new BadRequestException('Student already assigned to this course');
-  
-    // Assign the student to the course
-    const studentCourse = await this.studentCourseModel.create({
-      course_id: course._id,
-      user_id: student._id,
-      completion_percentage: 0, // Defaults to 0 as it's a new assignment
-      last_accessed: [], // Initialize as an empty array
-    });
-  
-    return studentCourse;
-  }
   
 }

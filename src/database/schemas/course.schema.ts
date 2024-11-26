@@ -4,10 +4,10 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: false } })
 export class Course extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  instructorId: Types.ObjectId;
+  instructor_id: Types.ObjectId;
 
-  @Prop({required: true})
-  title: string
+  @Prop({ required: true })
+  title: string;
   
   @Prop({ required: true })
   description: string;

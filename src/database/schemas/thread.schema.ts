@@ -4,10 +4,10 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class Thread extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Course', required: true })
-  courseId: Types.ObjectId;
+  course_id: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  creatorId: Types.ObjectId;
+  creator_id: Types.ObjectId;
 
   @Prop({ type: String, required: true })
   title: string;

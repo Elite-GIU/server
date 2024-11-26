@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
 import { StudentCourse } from '../../database/schemas/studentCourse.schema';
+import { User } from 'src/database/schemas/user.schema';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { Type } from 'class-transformer';
@@ -12,6 +13,7 @@ export class CourseService {
   constructor(
     @InjectModel(Course.name) private readonly courseModel: Model<Course>,
     @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
   /**
@@ -26,42 +28,36 @@ export class CourseService {
     return courses;
   }
 
-
-  /**
-   * Allows a student to assign themselves to a course.
-   * @param courseId ID of the course to assign the student to.
-   * @param studentId ID of the student assigning themselves.
-   * @returns Enrollment record for the student.
-   */
-  async assignStudentToCourse(courseId: string, studentId: string): Promise<StudentCourse> {
-    // Validate if the course exists
+  async assignStudentToCourse(courseId: string, studentIdentifier: string): Promise<StudentCourse> {
+    // Verify the course exists
     const course = await this.courseModel.findById(courseId);
-    if (!course) {
-      throw new NotFoundException(`Course with ID "${courseId}" not found`);
+    if (!course) throw new NotFoundException('Course not found');
+    //check if studentIdentifier is a valid email then get the student by email else get the student by id in 2 steps
+    let student;
+    if (studentIdentifier.includes('@')) {
+      student = await this.userModel.findOne({ email: studentIdentifier });
+    } else {
+      student = await this.userModel.findById(studentIdentifier);
     }
-
-    // Check if the student is already enrolled
-    const existingEnrollment = await this.studentCourseModel.findOne({
-      user_id: studentId,
-      course_id: courseId,
+    if (!student) throw new NotFoundException('Student not found');
+  
+    // Check if the student is already assigned to the course
+    const existingAssignment = await this.studentCourseModel.findOne({
+      course_id: course._id,
+      user_id: student._id,
     });
-
-    if (existingEnrollment) {
-      throw new BadRequestException('Student is already assigned to this course');
-    }
-
-    // Create a new enrollment
-    const enrollment = await this.studentCourseModel.create({
-      user_id: studentId,
-      course_id: courseId,
-      completion_percentage: 0,
-      last_accessed: [],
+    if (existingAssignment) throw new BadRequestException('Student already assigned to this course');
+  
+    // Assign the student to the course
+    const studentCourse = await this.studentCourseModel.create({
+      course_id: course._id,
+      user_id: student._id,
+      completion_percentage: 0, // Defaults to 0 as it's a new assignment
+      last_accessed: [], // Initialize as an empty array
     });
-
-    return enrollment;
+  
+    return studentCourse;
   }
-
-
 
   /**
    * Retrieves courses filtered by name or instructor.
@@ -96,7 +92,7 @@ export class CourseService {
 
   async getInstructorCourse(userId: string){
 
-    const courses = await this.courseModel.find({instructorId: new Types.ObjectId(userId)});
+    const courses = await this.courseModel.find({instructor_id: new Types.ObjectId(userId)});
 
     return courses;
 }
@@ -105,12 +101,12 @@ async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: stri
 
     const {category, description, difficulty_level, title} = createCourseDto;
 
-    const duplicated = await this.courseModel.find({instructorId: new Types.ObjectId(instructor_id), title: createCourseDto.title});
+    const duplicated = await this.courseModel.find({instructor_id: new Types.ObjectId(instructor_id), title: createCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    const newCourse = await this.courseModel.create({instructorId: new Types.ObjectId(instructor_id), category, description, difficulty_level, title});
+    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), category, description, difficulty_level, title});
 
     return newCourse;
     
@@ -125,12 +121,12 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     if(!course)
         throw new NotFoundException('Course not found');
 
-    const duplicated = await this.courseModel.find({instructorId: instuctorIdObject, title: updateCourseDto.title});
+    const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title: updateCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    if(course.instructorId !== instuctorIdObject)
+    if (!course.instructor_id.equals(instuctorIdObject))
         throw new ForbiddenException('You don\'t have access to this course');
 
     Object.assign(course, updateCourseDto);

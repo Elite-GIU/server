@@ -4,13 +4,13 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class RoomMessage extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Course', required: true })
-  courseId: Types.ObjectId;
+  course_id: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  senderId: Types.ObjectId;
+  sender_id: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'RoomMessage', required: false }) // If the message is a reply, this field will be populated
-  parentId: Types.ObjectId;
+  parent_id: Types.ObjectId;
 
   @Prop({ type: String, required: true })
   content: string;
