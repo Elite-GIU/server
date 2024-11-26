@@ -13,22 +13,31 @@ export class DashboardService {
   ) {}
 
   async getStudentDashboard(userId: string) {
-    const courses = await this.studentCourseModel.find({ user_id: userId });
-    console.log(courses);
-    return courses;
-    // return courses.map((course) => ({
-    //   courseId: course.course_id._id,
-    //   courseName: course.course_id.name,
-    //   progress: course.completion_percentage,
-    //   averageGrade: this.calculateAverageGrade(userId, course.course_id._id),
-    //   lastAccessed: course.last_accessed[course.last_accessed.length - 1],
-    //   accessedLastMonth: this.accessedInLastMonth(course.last_accessed),
-    // }));
+    const objId = new Types.ObjectId(userId);
+    const courses = await this.studentCourseModel.find({ user_id: objId }).populate('course_id');
+
+    const courseDetailsPromises = courses.map(async (course) => {
+      const averageGrade = await this.calculateAverageGrade(userId, course.course_id._id);
+      const lastAccessed = course.last_accessed[course.last_accessed.length - 1];
+      const accessedLastMonth = this.accessedInLastMonth(course.last_accessed);
+
+      return {
+        courseId: course.course_id._id,
+        courseName: course.course_id.name,
+        progress: course.completion_percentage,
+        averageGrade: averageGrade, 
+        lastAccessed: lastAccessed,
+        accessedLastMonth: accessedLastMonth,
+      };
+    });
+
+    const courseDetails = await Promise.all(courseDetailsPromises);
+    return courseDetails;
   }
 
   async getStudentQuizzes(userId: string) {
     const quizzes = await this.quizResponseModel
-    .find({ user_id: userId })
+    .find({ user_id: new Types.ObjectId(userId) })
     .populate({ path: 'module_id', populate: { path: 'course_id' } })  
     .sort({ createdAt: -1 });  
   
@@ -123,11 +132,11 @@ export class DashboardService {
   private async getStudentQuizzesPerCourse(userId: string, courseId: string){
     const modules = await this.modulesModel.find({ course_id: courseId }, { _id: 1 });
     const moduleIds = modules.map((module) => module._id);
-
     const quizzes = await this.quizResponseModel.find({
-        user_id: userId,
+        user_id: new Types.ObjectId(userId),
         module_id: { $in: moduleIds },
     });
+    console.log(quizzes);
     return quizzes;
   }
 
