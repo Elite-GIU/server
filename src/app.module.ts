@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { InstructorModule } from './modules/instructor/instructor.module';
     UserModule,
     AuthModule,
     InstructorModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
