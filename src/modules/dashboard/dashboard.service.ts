@@ -23,7 +23,7 @@ export class DashboardService {
 
       return {
         courseId: course.course_id._id,
-        courseName: course.course_id.name,
+        courseName: course.course_id.title,
         progress: course.completion_percentage,
         averageGrade: averageGrade, 
         lastAccessed: lastAccessed,
@@ -44,7 +44,7 @@ export class DashboardService {
     return quizzes.map((quiz) => ({
         quizId: quiz._id,
         grade: quiz.score,
-        courseName: quiz.module_id?.course_id?.name,  
+        courseName: quiz.module_id?.course_id?.title,  
         moduleName: quiz.module_id?.title,  
         dateTaken: quiz.createdAt,  
     }));
@@ -96,6 +96,7 @@ export class DashboardService {
       
       courseDetails.push({
         courseId: course._id,
+        courseName: course.title,
         description: course.description, 
         studentCount: studentCount
       });

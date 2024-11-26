@@ -7,7 +7,7 @@ export class Course extends Document {
   instructor_id: Types.ObjectId;
 
   @Prop({ required: true })
-  name: string;
+  title: string;
 
   @Prop({ required: true })
   description: string;
