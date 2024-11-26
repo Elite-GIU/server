@@ -351,11 +351,50 @@ logs {
     type: STRING #auth, general
 }
 
-chat {
-    courseId: MONGO_ID,
-    senderId: MONGO_ID,
-    message: STRING,
-    timestamp: DATE
+rooms{
+  room_id: MONGO_ID (PRIMARY KEY),
+  course_id: MONGO_ID,
+  instructor_id: MONGO_ID
+}
+
+roomMessages{
+  message_id: MONGO_ID (PRIMARY KEY),
+  room_id: MONGO_ID,
+  sender_id: MONGO_ID,
+  parent_id: MONGO_ID,
+  sent_at: DATE,
+  content: STRING
+}
+
+forums {
+  forum_id: MONGO_ID (PRIMARY KEY),
+  course_id: MONGO_ID,
+  instructor_id: MONGO_ID
+}
+
+threads {
+  thread_id: MONGO_ID (PRIMARY KEY),
+  forum_id: MONGO_ID, # reference it's parent forum
+  creator_id: MONGO_ID,
+  created_at: DATE,
+  title: String,
+  description: STRING,
+}
+
+threadMessages {
+  message_id: MONGO_ID (PRIMARY KEY),
+  thread_id: MONGO_ID,
+  sender_id: MONGO_ID,
+  created_at: DATE,
+  content: String,
+}
+
+threadMessageReplies {
+  reply_id: MONGO_ID (PRIMARY KEY),
+  message_id: MONGO_ID,
+  sender_id: MONGO_ID,
+  created_at: DATE,
+  content: String,
 }
 
 notification {

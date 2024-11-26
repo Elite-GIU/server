@@ -2,21 +2,19 @@ import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
-export class Chat extends Document {
+export class Thread extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Course', required: true })
   courseId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  senderId: Types.ObjectId;
-
-  @Prop({ type: String, ref: 'User', required: true })
-  senderName: string;
-
-  @Prop({ type: String, ref: 'User', required: true })
-  senderRole: string;
+  creatorId: Types.ObjectId;
 
   @Prop({ type: String, required: true })
-  message: string;
+  title: string;
+
+  @Prop({ type: String, required: true })
+  description: string;
+
 }
 
-export const ChatSchema = SchemaFactory.createForClass(Chat);
+export const ThreadSchema = SchemaFactory.createForClass(Thread);
