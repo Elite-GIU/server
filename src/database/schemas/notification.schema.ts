@@ -4,7 +4,7 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class Notification extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  userId: Types.ObjectId;
+  user_d: Types.ObjectId;
 
   @Prop({ type: String, required: true })
   title: string;

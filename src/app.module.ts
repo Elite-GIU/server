@@ -7,9 +7,12 @@ import { DatabaseModule } from './database/database.module';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { CourseModule } from './modules/course/course.module';
-import { StudentModule } from './modules/student/student.module';
+import { LogsModule } from './modules/logs/logs.module';
 import { ModuleModule } from './modules/module/module.module';
+import { QuizModule } from './modules/quiz/quiz.module';
+import { StudentModule } from './modules/student/student.module';
 
 @Module({
   imports: [
@@ -20,9 +23,12 @@ import { ModuleModule } from './modules/module/module.module';
     UserModule,
     AuthModule,
     InstructorModule,
+    DashboardModule,
     CourseModule,
-    StudentModule,
+    LogsModule,
     ModuleModule,
+    QuizModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

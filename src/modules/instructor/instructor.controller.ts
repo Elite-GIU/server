@@ -5,12 +5,13 @@ import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { AssignStudentDto } from './dto/AssignStudentDto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CourseService } from '../course/course.service';
 
 
 @ApiTags('Instructor')
 @Controller('instructor')
 export class InstructorController {
-  constructor(private readonly instructorService: InstructorService) {}
+  constructor(private readonly instructorService: InstructorService, private readonly courseService: CourseService) {}
 
   @Get()
   @Public()
@@ -73,9 +74,9 @@ export class InstructorController {
   async assignStudentToCourse(@Body() assignStudentDto: AssignStudentDto) {
     try {
       const { studentIdentifier, courseId } = assignStudentDto;
-      return await this.instructorService.assignStudentToCourse(studentIdentifier, courseId);
+      return await this.courseService.assignStudentToCourse(courseId, studentIdentifier);
     } catch (error) {
-      throw new InternalServerErrorException('Failed to assign student: ' + error.message);
+      throw new BadRequestException('Failed to assign student: ' + error.message);
     }
   }
 }
