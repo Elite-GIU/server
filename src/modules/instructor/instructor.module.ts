@@ -6,10 +6,12 @@ import { Course, CourseSchema } from '../../database/schemas/course.schema';
 import { StudentCourse, StudentCourseSchema } from '../../database/schemas/studentCourse.schema';
 import { User, UserSchema } from '../../database/schemas/user.schema';
 import { CourseService } from '../course/course.service';
+import { ModuleEntity, ModuleSchema } from 'src/database/schemas/module.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: ModuleEntity.name, schema: ModuleSchema },
       { name: Course.name, schema: CourseSchema },
       { name: StudentCourse.name, schema: StudentCourseSchema },
       { name: User.name, schema: UserSchema },

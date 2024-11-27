@@ -138,7 +138,7 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
 
   async getStudentCourses(userId: string) {
     const studentCourses = await this.studentCourseModel
-      .find({ user_id: userId })
+      .find({ user_id: new Types.ObjectId(userId) })
       .populate('course_id');
   
     return studentCourses.map(studentCourse => studentCourse.course_id);
@@ -146,13 +146,12 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
 
   async getStudentCourseWithModules(userId: string, courseId: string) {
     const studentCourse = await this.studentCourseModel
-      .findOne({ user_id: userId, course_id: courseId })
+      .findOne({ user_id: new Types.ObjectId(userId), course_id: new Types.ObjectId(courseId) })
       .populate('course_id');
   
     if (!studentCourse) {
       throw new NotFoundException('Course not found for this student');
     }
-  
     const course = studentCourse.course_id;
     const modules = await this.moduleModel
       .find({ course_id: course._id })
@@ -167,7 +166,7 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
   async getStudentCoursesByStatus(userId: string, status: string) {
     const studentCourses = await this.studentCourseModel
       .find({ 
-        user_id: userId,
+        user_id: new Types.ObjectId(userId),
         status: status 
       })
       .populate('course_id');

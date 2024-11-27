@@ -12,7 +12,7 @@ import { ModuleEntity, ModuleSchema } from '../../database/schemas/module.schema
     MongooseModule.forFeature([
       { name: 'Course', schema: CourseSchema },
       { name: StudentCourse.name, schema: StudentCourseSchema },
-      { name: 'User', schema: UserSchema}
+      { name: 'User', schema: UserSchema},
       { name: ModuleEntity.name, schema: ModuleSchema },
     ]),
   ],
