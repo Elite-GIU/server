@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, UsePipes } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
@@ -8,8 +8,11 @@ import {
     ApiTags,
     ApiOperation,
     ApiResponse,
-    ApiBearerAuth
+    ApiBearerAuth,
+    ApiParam
   } from '@nestjs/swagger';
+import { ExistParam } from 'src/common/validators/existParam.decorator';
+import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -41,12 +44,20 @@ export class DashboardController {
     return this.dashboardService.getInstructorDashboard(instructorId);
   }
 
+  // Example of using custom params 
+  // It takes two arguments, the first is an object with the idKey and modelName, the second is the context
+  // Don't forget to call @ApiParam() in the swagger documentation for the route if you are using this decorator @ExistParam
   @UseGuards(JwtAuthGuard, InstructorGuard)
+  @UsePipes(CheckExistValidatorPipe)
   @Get('instructor/course/:id')
   @ApiOperation({ summary: 'Get the instructors course' })
   @ApiResponse({ status: 200, description: 'Course returned successfully' })
-  async getInstructorCourseDashboard(@Param('id') courseId: string) {
-    return this.dashboardService.getInstructorCourseDashboard(courseId);
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  async getInstructorCourseDashboard (
+    @ExistParam({ idKey: 'id', modelName: 'Course' }) 
+    course: { id: string, modelName: string } 
+  ){
+    return this.dashboardService.getInstructorCourseDashboard(course.id);
   }
 
   @UseGuards(JwtAuthGuard, InstructorGuard)
