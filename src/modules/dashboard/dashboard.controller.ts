@@ -54,8 +54,7 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Course returned successfully' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   async getInstructorCourseDashboard (
-    @ExistParam({ idKey: 'id', modelName: 'Course' }) 
-    course: { id: string, modelName: string } 
+    @ExistParam({ idKey: 'id', modelName: 'Course' }) course: { id: string, modelName: string } 
   ){
     return this.dashboardService.getInstructorCourseDashboard(course.id);
   }

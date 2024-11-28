@@ -91,10 +91,8 @@ export class CourseService {
    * @returns List of all courses from this instructor.
    */
 
-  async getInstructorCourse(userId: string){
-
+  async getInstructorCourse(userId: string) {
     const courses = await this.courseModel.find({instructor_id: new Types.ObjectId(userId)});
-
     return courses;
 }
 

@@ -8,7 +8,6 @@ export class CheckExistValidatorPipe implements PipeTransform {
     constructor(@InjectConnection() private connection: Connection) {}
 
     async transform(value: { id: string, modelName: string }, metadata: ArgumentMetadata) {
-        console.log(value);
         if (!value.modelName || !this.connection.models[value.modelName]) {
             throw new BadRequestException(`Model ${value.modelName} not found`);
         }
