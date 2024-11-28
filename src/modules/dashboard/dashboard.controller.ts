@@ -11,7 +11,7 @@ import {
     ApiBearerAuth,
     ApiParam
   } from '@nestjs/swagger';
-import { ExistParam } from 'src/common/validators/existParam.decorator';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 
 @ApiTags('Dashboard')

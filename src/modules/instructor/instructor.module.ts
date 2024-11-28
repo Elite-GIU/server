@@ -6,15 +6,10 @@ import { Course, CourseSchema } from '../../database/schemas/course.schema';
 import { StudentCourse, StudentCourseSchema } from '../../database/schemas/studentCourse.schema';
 import { User, UserSchema } from '../../database/schemas/user.schema';
 import { CourseService } from '../course/course.service';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Course.name, schema: CourseSchema },
-      { name: StudentCourse.name, schema: StudentCourseSchema },
-      { name: User.name, schema: UserSchema },
-    ]),
-  ],
+  imports: [DatabaseModule],
   controllers: [InstructorController],
   providers: [InstructorService, CourseService]
 })

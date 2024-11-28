@@ -26,8 +26,7 @@ import { QuizModule } from './modules/quiz/quiz.module';
     CourseModule,
     LogsModule,
     ModuleModule,
-    QuizModule
-
+    QuizModule,
   ],
   controllers: [AppController],
   providers: [AppService],
