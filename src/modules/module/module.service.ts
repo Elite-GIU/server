@@ -12,13 +12,7 @@ export class ModuleService {
         @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>
     ) {}
 
-   async getModuleContent(userId: string, courseId: string, moduleId: string) {
-        const enrollment = await this.studentCourseModel.findOne({
-          user_id: new Types.ObjectId(userId),
-          course_id: new Types.ObjectId(courseId),
-        });
-        if (!enrollment) throw new NotFoundException('Course enrollment not found');
-    
+   async getModuleContent(moduleId: string) {
         const module = await this.moduleModel.findById(moduleId);
         if (!module) throw new NotFoundException('Module not found');
     

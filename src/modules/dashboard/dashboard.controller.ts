@@ -64,11 +64,11 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get the students on an instructors course' })
   @ApiResponse({ status: 200, description: 'Students returned successfully' })
   async getInstructorCourseStudents(
-    @Param('id') courseId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
-    return this.dashboardService.getInstructorCourseStudents(courseId, page, limit);
+    return this.dashboardService.getInstructorCourseStudents(course.id, page, limit);
   }
 }
 
