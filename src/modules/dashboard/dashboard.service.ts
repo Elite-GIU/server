@@ -1,15 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { Course } from 'src/database/schemas/course.schema';
+import { ModuleEntity } from 'src/database/schemas/module.schema';
+import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 
 @Injectable()
 export class DashboardService {
   constructor(
-    @InjectModel('StudentCourse') private readonly studentCourseModel: Model<any>,
-    @InjectModel('QuizResponse') private readonly quizResponseModel: Model<any>,
-    @InjectModel('Course') private readonly coursesModel: Model<any>,
-    @InjectModel('Module') private readonly modulesModel: Model<any>,
+    @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<any>,
+    @InjectModel(QuizResponse.name) private readonly quizResponseModel: Model<any>,
+    @InjectModel(Course.name) private readonly coursesModel: Model<any>,
+    @InjectModel(ModuleEntity.name) private readonly modulesModel: Model<any>,
   ) {}
 
   async getStudentDashboard(userId: string) {

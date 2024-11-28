@@ -23,8 +23,10 @@ export class Content extends Document {
   @Prop({ required: true, default: true })
   isVisible: boolean; // Whether the content is visible to students
 
+  //TODO - Check if this is correct in the next meeting
   @Prop({ required: false })
-  content: string | object; // Inline content for assignments, etc.
+  // content: string | object; // Inline content for assignments, etc.
+  content: string; 
 
   @Prop({ required: false })
   contentUrl: string; // URL to the content file (videos, documents, etc.)

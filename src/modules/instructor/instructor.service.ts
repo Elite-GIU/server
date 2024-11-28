@@ -8,8 +8,6 @@ import { User } from '../../database/schemas/user.schema';
 @Injectable()
 export class InstructorService {
   constructor(
-    @InjectModel(Course.name) private readonly courseModel: Model<Course>,
-    @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
