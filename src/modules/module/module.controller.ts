@@ -6,7 +6,7 @@ import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Modules')
-@Controller('module')
+@Controller()
 export class ModuleController {
   constructor(private readonly moduleService: ModuleService) {}
 

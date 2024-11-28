@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiTags } from '@nestjs/swagger';
 
-@Controller('student')
+@Controller()
 @UseGuards(JwtAuthGuard, StudentGuard)
 @ApiTags('Students')
 export class StudentController {
