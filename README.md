@@ -339,7 +339,8 @@ studentCourses {
     user_id: MONGO_ID,
     course_id: MONGO_ID,
     completion_percentage: FLOAT,
-    last_accessed: DATE[]
+    last_accessed: DATE[],
+    status: STRING
 }
 
 logs {

@@ -7,15 +7,16 @@ import { User } from 'src/database/schemas/user.schema';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { Type } from 'class-transformer';
+import { ModuleEntity } from '../../database/schemas/module.schema';
 
 @Injectable()
 export class CourseService {
   constructor(
-    @InjectModel(Course.name) private readonly courseModel: Model<Course>,
-    @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
+      @InjectModel(Course.name) private readonly courseModel: Model<Course>,
+      @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+      @InjectModel(ModuleEntity.name) private readonly moduleModel: Model<ModuleEntity>,
   ) {}
-
   /**
    * Retrieves all available courses.
    * @returns List of all courses.
@@ -90,10 +91,8 @@ export class CourseService {
    * @returns List of all courses from this instructor.
    */
 
-  async getInstructorCourse(userId: string){
-
+  async getInstructorCourse(userId: string) {
     const courses = await this.courseModel.find({instructor_id: new Types.ObjectId(userId)});
-
     return courses;
 }
 
@@ -134,4 +133,46 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     return await course.save()
 
 }
+
+  async getStudentCourses(userId: string) {
+    const studentCourses = await this.studentCourseModel
+      .find({ user_id: new Types.ObjectId(userId) })
+      .populate('course_id');
+  
+    return studentCourses.map(studentCourse => studentCourse.course_id);
+  }
+
+  async getStudentCourseWithModules(userId: string, courseId: string) {
+    const studentCourse = await this.studentCourseModel
+      .findOne({ user_id: new Types.ObjectId(userId), course_id: new Types.ObjectId(courseId) })
+      .populate('course_id');
+  
+    if (!studentCourse) {
+      throw new NotFoundException('Course not found for this student');
+    }
+    const course = studentCourse.course_id;
+    const modules = await this.moduleModel
+      .find({ course_id: course._id })
+      .select('-content -resources');
+  
+    return {
+      course,
+      modules,
+    };
+  }
+
+  async getStudentCoursesByStatus(userId: string, status: string) {
+    const studentCourses = await this.studentCourseModel
+      .find({ 
+        user_id: new Types.ObjectId(userId),
+        status: status 
+      })
+      .populate('course_id');
+
+    if (!studentCourses || studentCourses.length === 0) {
+      throw new NotFoundException(`No ${status} courses found for this student`);
+    }
+
+    return studentCourses.map(studentCourse => studentCourse.course_id);
+  }
 }

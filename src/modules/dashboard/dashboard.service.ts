@@ -39,11 +39,12 @@ export class DashboardService {
   }
 
   async getStudentQuizzes(userId: string) {
+    console.log(userId);
     const quizzes = await this.quizResponseModel
     .find({ user_id: new Types.ObjectId(userId) })
     .populate({ path: 'module_id', populate: { path: 'course_id' } })  
     .sort({ createdAt: -1 });  
-  
+    console.log(userId);
     return quizzes.map((quiz) => ({
         quizId: quiz._id,
         grade: quiz.score,

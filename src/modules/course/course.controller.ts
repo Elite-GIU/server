@@ -7,48 +7,114 @@ import {
   UseGuards,
   InternalServerErrorException,
   Put,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { JwtAuthGuard} from '../auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
 import { StudentGuard } from '../../common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
-import mongoose from 'mongoose';
+import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
 
 @ApiTags('Courses')
 @Controller()
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
+    
+    @Get('/courses')
+    @Public()
+    @ApiOperation({ summary: 'Retrieve all courses for the landing page' })
+    @ApiResponse({
+      status: 200,
+      description: 'List of all available courses retrieved successfully.',
+      schema: {
+        example: [
+          {
+            _id: '648a1e9b9f4e2d1a1b2c3d4e',
+            category: 'Programming',
+            description: 'Learn Python programming from scratch',
+            difficulty_level: 'Beginner',
+          },
+        ],
+      },
+    })
+    @ApiResponse({ status: 404, description: 'No courses available.' })
+    async getAllCourses() {
+      return await this.courseService.getAllCourses();
+    }
 
-  @Get('/courses')
-  @Public()
-  @ApiOperation({ summary: 'Retrieve all courses for the landing page' })
+    @Get('instuctor/courses')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Retrieve all courses of logged in instructor' })
+    @UseGuards(JwtAuthGuard, InstructorGuard)
+    async getInstructorCourses(@GetUser('userId') userId: string){
+      return await this.courseService.getInstructorCourse(userId);
+    }
+
+    @Post('instructor/courses')
+    @UseGuards(JwtAuthGuard, InstructorGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Create a course under the logged in instructor' })
+    async addInstructorCourse(@Body() createCourseDto: CreateCourseDto, @GetUser('userId') userId : string){
+       try {
+         return await this.courseService.addInstructorCourse(createCourseDto, userId);
+       }catch(error){
+        throw new InternalServerErrorException('Course creation failed : ' + error.message);
+       }
+
+    }
+
+    @Put('instructor/courses/:id')
+    @UseGuards(JwtAuthGuard, InstructorGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Instructor updates one of their courses' })
+    @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+    async updateInstructorCourse(
+      @Body() updateCourseDto : UpdateCourseDto,
+      @GetUser('userId') userId: string,  
+      @ExistParam({idKey: 'id', modelName: 'Course'}, CheckExistValidatorPipe) course: {id: string, modelName: string},
+    ) { 
+        console.log(`Course ID: ${course.id}`);
+        return await this.courseService.updateInstructorCourse(updateCourseDto, userId, course.id);
+    }
+
+
+  @Get('student/courses')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Get all courses for the authenticated student' })
   @ApiResponse({
     status: 200,
-    description: 'List of all available courses retrieved successfully.',
-    schema: {
-      example: [
-        {
-          _id: '648a1e9b9f4e2d1a1b2c3d4e',
-          category: 'Programming',
-          description: 'Learn Python programming from scratch',
-          difficulty_level: 'Beginner',
-        },
-      ],
-    },
+    description: 'List of courses for the student retrieved successfully.',
   })
-  @ApiResponse({ status: 404, description: 'No courses available.' })
-  async getAllCourses() {
-    return await this.courseService.getAllCourses();
+  @ApiResponse({ status: 404, description: 'No courses found for this student.' })
+  getStudentCourses(@GetUser('userId') userId: string) {
+    return this.courseService.getStudentCourses(userId);
   }
 
+  @Get('student/courses/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard) 
+  @ApiOperation({ summary: 'Get course details with modules for the authenticated student' })
+  @ApiResponse({
+    status: 200,
+    description: 'Course details with modules retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'Course not found for this student.' })
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  getStudentCourseById(
+    @GetUser('userId') userId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
+  ) {
+    return this.courseService.getStudentCourseWithModules(userId, course.id);
+  }
 
-  @Post('/courses:id/assign')
+  @Post('student/courses/:id/assign')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, StudentGuard)
   @ApiOperation({ summary: 'Assign the authenticated student to a course' })
@@ -67,64 +133,29 @@ export class CourseController {
   })
   @ApiResponse({ status: 400, description: 'Student is already assigned to this course.' })
   @ApiResponse({ status: 404, description: 'Course not found.' })
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   async assignStudentToCourse(
-    @Param('id') courseId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
     @GetUser('userId') studentId: string,
   ) {
     try {
-      return await this.courseService.assignStudentToCourse(courseId, studentId);
+      return await this.courseService.assignStudentToCourse(course.id, studentId);
     } catch (error) {
       throw new BadRequestException(
         'Failed to assign student to course: ' + error.message,
       );
     }
   }
-
-    @Get('instuctor/courses')
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Retrieve all courses of logged in instructor' })
-    @UseGuards(JwtAuthGuard, InstructorGuard)
-    async getInstructorCourses(@GetUser('userId') userId: string){
-
-        return await this.courseService.getInstructorCourse(userId);
-
-    }
-
-    @Post('instructor/courses')
-    @UseGuards(JwtAuthGuard, InstructorGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Create a course under the logged in instructor' })
-    async addInstructorCourse(@Body() createCourseDto: CreateCourseDto, @GetUser('userId') userId : string){
- 
-       try {
-
-         return await this.courseService.addInstructorCourse(createCourseDto, userId);
-
-       }catch(error){
-    
-        throw new InternalServerErrorException('Course creation failed : ' + error.message);
-
-       }
-
-    }
-
-    @Put('instructor/courses/:id')
-    @UseGuards(JwtAuthGuard, InstructorGuard)
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Instructor updates one of their courses' })
-    async updateInstructorCourse(@Body() updateCourseDto : UpdateCourseDto, @Param('id') id: string, @GetUser('userId') userId: string){
-
-        try {
-
-            if(!mongoose.isValidObjectId(id))
-              throw new BadRequestException('Wrong id');//I don't think this is for the user, it's for us.
-
-            return await this.courseService.updateInstructorCourse(updateCourseDto, userId, id);
-
-        }catch(error){
-
-            throw new BadRequestException('Failed to update course: ' + error.message);
-        }
-    }
-
+  @Get('student/courses/status/:status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Get student courses filtered by status' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of student courses by status retrieved successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'No courses found with the specified status.' })
+  getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
+    return this.courseService.getStudentCoursesByStatus(userId, status);
+  }
 }

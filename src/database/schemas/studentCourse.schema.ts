@@ -14,6 +14,15 @@ export class StudentCourse extends Document {
 
   @Prop({ type: [Date], default: [] })
   last_accessed: Date[];
+
+  @Prop({
+    type: String,
+    enum: ['enrolled', 'completed', 'failed'],
+    default: 'enrolled', 
+    required: true,
+  })
+  status: string; 
+
 }
 
 export const StudentCourseSchema = SchemaFactory.createForClass(StudentCourse);

@@ -4,7 +4,7 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Questionbank extends Document {
-  @Prop({ type: Types.ObjectId, required: true, ref: 'Module' })
+  @Prop({ type: Types.ObjectId, required: true, ref: 'ModuleEntity' })
   module_id: Types.ObjectId;
 
   @Prop({ type: [Types.ObjectId], required: true, ref: 'Question' })
