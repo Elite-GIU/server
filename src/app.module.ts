@@ -13,6 +13,7 @@ import { LogsModule } from './modules/logs/logs.module';
 import { ModuleModule } from './modules/module/module.module';
 import { QuizModule } from './modules/quiz/quiz.module';
 import { StudentModule } from './modules/student/student.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { StudentModule } from './modules/student/student.module';
     ModuleModule,
     QuizModule,
     StudentModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
