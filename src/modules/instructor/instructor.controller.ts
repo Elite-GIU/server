@@ -3,9 +3,12 @@ import { InstructorService } from './instructor.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { AssignStudentDto } from './dto/AssignStudentDto';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CourseService } from '../course/course.service';
+import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { GetUser } from 'src/common/decorators/getUser.decorator';
 
 
 @ApiTags('Instructor')
@@ -37,6 +40,7 @@ export class InstructorController {
 
 
   @Get('/:name')
+  @Public()
   @ApiOperation({ summary: 'Get instructors by name' })
   @ApiParam({
     name: 'name',
@@ -71,12 +75,22 @@ export class InstructorController {
   @ApiOperation({ summary: 'Assign a student to a course' })
   @ApiResponse({ status: 201, description: 'Student successfully assigned to the course.' })
   @ApiResponse({ status: 400, description: 'Invalid data or assignment failed.' })
-  async assignStudentToCourse(@Body() assignStudentDto: AssignStudentDto) {
-    try {
-      const { studentIdentifier, courseId } = assignStudentDto;
-      return await this.courseService.assignStudentToCourse(courseId, studentIdentifier);
-    } catch (error) {
-      throw new BadRequestException('Failed to assign student: ' + error.message);
-    }
+  async assignStudentToCourse( 
+    @Body() assignStudentDto: AssignStudentDto,
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    course: { _id: string },
+  ) {
+    const { studentIdentifier } = assignStudentDto;
+    return await this.courseService.assignStudentToCourse(course._id, studentIdentifier);
   }
+  
 }

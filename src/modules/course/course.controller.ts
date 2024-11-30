@@ -20,6 +20,8 @@ import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 
 @ApiTags('Courses')
 @Controller()
@@ -76,11 +78,15 @@ export class CourseController {
     @ApiParam({ name: 'id', required: true, description: 'Course ID' })
     async updateInstructorCourse(
       @Body() updateCourseDto : UpdateCourseDto,
-      @GetUser('userId') userId: string,  
-      @ExistParam({idKey: 'id', modelName: 'Course'}, CheckExistValidatorPipe) course: {id: string, modelName: string},
+      @AssignedParam({
+        modelName: 'Course', 
+        firstAttrName: 'instructor_id', 
+        secondAttrName: '_id', 
+        firstKey: 'userId', 
+        secondKey: 'id',
+      }, CheckAssignedValidatorPipe) course : {instructor_id: string, _id: string}
     ) { 
-        console.log(`Course ID: ${course.id}`);
-        return await this.courseService.updateInstructorCourse(updateCourseDto, userId, course.id);
+        return await this.courseService.updateInstructorCourse(updateCourseDto, course.instructor_id, course._id);
     }
 
 
@@ -93,7 +99,9 @@ export class CourseController {
     description: 'List of courses for the student retrieved successfully.',
   })
   @ApiResponse({ status: 404, description: 'No courses found for this student.' })
-  getStudentCourses(@GetUser('userId') userId: string) {
+  getStudentCourses(
+    @GetUser('userId') userId: string
+  ) {
     return this.courseService.getStudentCourses(userId);
   }
 
@@ -108,10 +116,16 @@ export class CourseController {
   @ApiResponse({ status: 404, description: 'Course not found for this student.' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   getStudentCourseById(
-    @GetUser('userId') userId: string,
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
+    @AssignedParam({
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'id',
+    }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
+
   ) {
-    return this.courseService.getStudentCourseWithModules(userId, course.id);
+    return this.courseService.getStudentCourseWithModules(course_id);
   }
 
   @Post('student/courses/:id/assign')

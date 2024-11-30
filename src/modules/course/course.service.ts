@@ -112,26 +112,15 @@ async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: stri
 }
 
 async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: string, id: string) : Promise<Course> {
-
     const course = await this.courseModel.findById(id);
-
     const instuctorIdObject = new Types.ObjectId(instructor_id);
-
-    if(!course)
-        throw new NotFoundException('Course not found');
-
     const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title: updateCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    if (!course.instructor_id.equals(instuctorIdObject))
-        throw new ForbiddenException('You don\'t have access to this course');
-
     Object.assign(course, updateCourseDto);
-
     return await course.save()
-
 }
 
   async getStudentCourses(userId: string) {
@@ -142,15 +131,10 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     return studentCourses.map(studentCourse => studentCourse.course_id);
   }
 
-  async getStudentCourseWithModules(userId: string, courseId: string) {
-    const studentCourse = await this.studentCourseModel
-      .findOne({ user_id: new Types.ObjectId(userId), course_id: new Types.ObjectId(courseId) })
-      .populate('course_id');
-  
-    if (!studentCourse) {
-      throw new NotFoundException('Course not found for this student');
-    }
-    const course = studentCourse.course_id;
+  async getStudentCourseWithModules(courseId: string) {
+    console.log('courseId', courseId);
+    const course = await this.courseModel.findById(courseId);
+    console.log('course', course);
     const modules = await this.moduleModel
       .find({ course_id: course._id })
       .select('-content -resources');

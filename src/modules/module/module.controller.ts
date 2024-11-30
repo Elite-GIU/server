@@ -4,8 +4,6 @@ import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 
@@ -28,22 +26,22 @@ export class ModuleController {
   getModuleContent(
     @GetUser('userId')
     @Param('courseId')
-    @Param('moduleId') moduleId: string,
+    @Param('moduleId') 
     // TODO: review the commented code below
-    // @AssignedParam({
-    //   modelName: 'StudentCourse', 
-    //   firstAttrName: 'user_id', 
-    //   secondAttrName: 'course_id', 
-    //   firstKey: 'userId',
-    //   secondKey: 'courseId',
-    //  }, CheckAssignedValidatorPipe) 
-    // @AssignedParam({
-    //   modelName: 'ModuleEntity', 
-    //   firstAttrName: '_id', 
-    //   secondAttrName: 'course_id', 
-    //   firstKey: 'moduleId', 
-    //   secondKey: 'courseId',
-    // }, CheckAssignedValidatorPipe) moduleId: string,
+    @AssignedParam({
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId',
+      secondKey: 'courseId',
+     }, CheckAssignedValidatorPipe) test: string,
+    @AssignedParam({
+      modelName: 'ModuleEntity', 
+      firstAttrName: '_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'moduleId', 
+      secondKey: 'courseId',
+    }, CheckAssignedValidatorPipe) moduleId: string,
   ) {
     return this.moduleService.getModuleContent(moduleId);
   }
