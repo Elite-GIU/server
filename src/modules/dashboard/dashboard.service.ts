@@ -97,17 +97,49 @@ export class DashboardService {
   
     for (const course of courses) {
       const studentCount = await this.studentCourseModel.countDocuments({ course_id: course._id });
-      
+      const studentCompletedCourse = await this.studentCourseModel.countDocuments({ course_id: course._id, completion_percentage: 100 });
+      const segmentedStudents = await this.segmentStudentsPerCourse(course._id);
+
       courseDetails.push({
         courseId: course._id,
         courseName: course.title,
         description: course.description, 
-        studentCount: studentCount
+        studentCount: studentCount,
+        studentsCompletedCourse: studentCompletedCourse,
+        performanceMetrics: segmentedStudents
       });
     }
   
     return courseDetails;
   }
+
+  private async segmentStudentsPerCourse(courseId: string) {
+    const students = await this.studentCourseModel.find({ course_id: courseId });
+
+    const segmentation = {
+      belowAverage: 0,
+      average: 0,
+      aboveAverage: 0,
+      excellent: 0,
+    };
+
+    for (const student of students) {
+      const averageGrade = await this.calculateAverageGrade(student.user_id, courseId);
+  
+      if (averageGrade < 50) {
+        segmentation.belowAverage++;
+      } else if (averageGrade >= 50 && averageGrade < 75) {
+        segmentation.average++;
+      } else if (averageGrade >= 75 && averageGrade < 90) {
+        segmentation.aboveAverage++;
+      } else if (averageGrade >= 90) {
+        segmentation.excellent++;
+      }
+    }
+  
+    return segmentation;
+  }
+  
 
   private async getModuleDetails(modules: any[]) {
     const moduleDetails = [];
