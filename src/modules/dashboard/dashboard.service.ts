@@ -130,7 +130,7 @@ export class DashboardService {
   }
 
 
-  private async calculateAverageGrade(userId: string, courseId: string) {
+  public async calculateAverageGrade(userId: string, courseId: string) {
     const quizzes = await this.getStudentQuizzesPerCourse(userId, courseId);
     const grades = quizzes.map((quiz) => quiz.score || 0);
     return this.calculateAverage(grades);

@@ -18,6 +18,12 @@ export class QuizResponse extends Document {
   @Prop({ required: false })
   score: number; 
 
+  @Prop({ 
+    required: false, 
+    enum: ['passed', 'failed'],
+    default: 'passed'})
+  finalGrade: string; 
+
 }
 
 export const QuizResponseSchema = SchemaFactory.createForClass(QuizResponse);

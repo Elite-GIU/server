@@ -115,6 +115,7 @@ Acceptance Criteria:
 
 - validate that course belongs to instructor (through guards, coordinate with momen)
 - add a new entry in modules
+- validate: title, nrOfQuestions, assessmentType 
 
 `POST instructor/courses/id/modules/id/upload`
 
@@ -125,6 +126,7 @@ Acceptance Criteria:
 - handle upload files like urls, txt, pdf, (mp4).
 - Validate uploads and check for possible errors
 - update module content array to include location of new conetnt
+- add the id to the content array in module table
 
 `POST instructor/courses/id/modules/id/questionbank`
 
@@ -133,6 +135,13 @@ Create a new question on the questionbank
 Acceptance Criteria:
 
 - fill all fields, add difficulty
+- add it to questionbank belonging to module
+
+`GET instructor/courses/id/modules/id/questionbank`
+
+- display questionbank with questions, choices and answer
+- must add pagination (leave it for later)
+
 
 `PUT instructor/courses/id/modules/id/question/id`
 
@@ -140,15 +149,16 @@ Updated a specific question
 
 Acceptance Criteria:
 
-- change a question in the questionbank of the module
+- change question: question, choices, solution
 
-`DELTEE instructor/courses/id/modules/id/question/id`
+`DELETE instructor/courses/id/modules/id/question/id`
 
 Delete a specific question
 
 Acceptance Criteria:
 
 - delete a question from the questionbank
+- check how mongo handles cascade in an array of references to another table
 
 &nbsp;
 
@@ -156,11 +166,14 @@ Acceptance Criteria:
 
 `GET student/courses/id/modules/id/quiz`
 
-Create a new quiz using 10 randomized questions from module questionbank
+Create a new quiz using n randomized questions from module questionbank
+based on nr of questions and type of the module
+Create it based on student performance
 
 Acceptance Criteria:
 
-- display questions without the answers. only show options
+- persist the quiz in the quizResponse schema
+- display questions of the quiz with the choices without the answers
 
 `POST student/courses/id/modules/id/quiz`
 
@@ -169,8 +182,8 @@ Submit quiz solution
 Acceptance Criteria:
 
 - for each question id, there's an answer.
-- Collect all answers and add them to the response entity
-- calculate the score
+- Collect all answers and add them to the quizResponse table
+- calculate the score and update finalGrade
 - update the studentCourse with extra progress since
   module is done (if grade >50) and add a new date in the last_accessed array
 
@@ -182,6 +195,7 @@ Acceptance Criteria:
 
 - show wrong answered questions and their correct answer
 - Display the score
+- if failed, write a message "please study module nr {} again"
 
 &nbsp;
 
