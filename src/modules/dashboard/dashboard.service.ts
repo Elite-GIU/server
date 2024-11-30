@@ -67,17 +67,26 @@ export class DashboardService {
     return moduleDetails;
   }
 
-  async getInstructorCourseStudents(courseId: string, page: number, limit: number) {
+  async getInstructorCourseStudents(courseId: string, page: number, limit: number, name: string) {
     const students = await this.studentCourseModel
       .find({ course_id: new Types.ObjectId(courseId) })
-      .populate('user_id')
+      .populate('user_id') 
       .skip((page - 1) * limit)
       .limit(limit);
-    const studentsPromise= students.map(async(student) => ({
+
+    const filteredStudents = students.filter(student => {
+      if (name) {
+        return student.user_id.name.toLowerCase().includes(name.toLowerCase());
+      }
+      return true;
+    });
+
+    const studentsPromise = filteredStudents.map(async (student) => ({
       studentId: student.user_id._id,
       studentName: student.user_id.name,
       averageGrade: await this.calculateAverageGrade(student.user_id._id, courseId),
     }));
+
     return await Promise.all(studentsPromise);
 
   }
