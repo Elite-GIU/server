@@ -5,31 +5,23 @@ import { Document } from 'mongoose';
 export class Content extends Document {
 
   @Prop({ required: true })
-  title: string; // Title of the content
+  title: string; 
 
   @Prop({ required: true })
-  description: string; // Description of the content
-
-  @Prop({ required: true })
-  author: string; // Name or ID of the instructor uploading the content
+  description: string;
 
   @Prop({
     required: true,
-    enum: ['video', 'document', 'quiz', 'assignment'], // Type of content
+    enum: ['video', 'document', 'website', 'assignment', 'tutorial', 'slides'],
     default: 'document',
   })
   type: string;
 
   @Prop({ required: true, default: true })
-  isVisible: boolean; // Whether the content is visible to students
+  isVisible: boolean;
 
-  //TODO - Check if this is correct in the next meeting
   @Prop({ required: false })
-  // content: string | object; // Inline content for assignments, etc.
   content: string; 
-
-  @Prop({ required: false })
-  contentUrl: string; // URL to the content file (videos, documents, etc.)
 
 }
 

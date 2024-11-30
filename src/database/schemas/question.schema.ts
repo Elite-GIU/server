@@ -18,7 +18,7 @@ export class Question extends Document {
 
   @Prop({
     required: true,
-    enum: ['mcq', 'true_false', 'essay','mix'],
+    enum: ['mcq', 'true_false'],
     default: 'mcq',
   })
   type: string;
