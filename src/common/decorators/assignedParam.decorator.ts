@@ -15,7 +15,6 @@ export const AssignedParam = createParamDecorator(
     const firstValue = res[data.firstKey] || res[data.firstKey];
     const secondValue = res[data.secondKey];
     const modelName = data.modelName;
-    console.log('AssignedParam', res);
     return {
       ...body, 
       modelName: modelName,
