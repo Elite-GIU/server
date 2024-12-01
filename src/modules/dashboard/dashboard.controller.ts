@@ -9,7 +9,8 @@ import {
     ApiOperation,
     ApiResponse,
     ApiBearerAuth,
-    ApiParam
+    ApiParam,
+    ApiQuery
   } from '@nestjs/swagger';
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
@@ -68,9 +69,13 @@ export class DashboardController {
   @ApiOperation({ summary: 'Get the students on an instructors course' })
   @ApiResponse({ status: 200, description: 'Students returned successfully' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiQuery({ name: 'name', required: false, description: 'Search for students by name' })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number'})
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit'})
   async getInstructorCourseStudents(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Query('name') name: string,
     @AssignedParam({
       modelName: 'Course', 
       firstAttrName: 'instructor_id', 
@@ -79,7 +84,7 @@ export class DashboardController {
       secondKey: 'id',
     }, CheckAssignedValidatorPipe) course: { _id: string}
   ) {
-    return this.dashboardService.getInstructorCourseStudents(course._id, page, limit);
+    return this.dashboardService.getInstructorCourseStudents(course._id, page, limit, name);
   }
 }
 

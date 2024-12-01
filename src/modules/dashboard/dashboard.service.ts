@@ -39,12 +39,10 @@ export class DashboardService {
   }
 
   async getStudentQuizzes(userId: string) {
-    console.log(userId);
     const quizzes = await this.quizResponseModel
     .find({ user_id: new Types.ObjectId(userId) })
     .populate({ path: 'module_id', populate: { path: 'course_id' } })  
     .sort({ createdAt: -1 });  
-    console.log(userId);
     return quizzes.map((quiz) => ({
         quizId: quiz._id,
         grade: quiz.score,
@@ -67,22 +65,36 @@ export class DashboardService {
     return moduleDetails;
   }
 
-  async getInstructorCourseStudents(courseId: string, page: number, limit: number) {
-    const students = await this.studentCourseModel
+  async getInstructorCourseStudents(
+    courseId: string,
+    page: number,
+    limit: number,
+    name: string
+  ) {
+    const allStudents = await this.studentCourseModel
       .find({ course_id: new Types.ObjectId(courseId) })
-      .populate('user_id')
-      .skip((page - 1) * limit)
-      .limit(limit);
-    const studentsPromise= students.map(async(student) => ({
+      .populate('user_id');
+  
+    const filteredStudents = name
+      ? allStudents.filter(student =>
+          student.user_id.name.toLowerCase().includes(name.toLowerCase())
+        )
+      : allStudents;
+  
+    const paginatedStudents = filteredStudents.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+  
+    const studentsPromise = paginatedStudents.map(async student => ({
       studentId: student.user_id._id,
       studentName: student.user_id.name,
       averageGrade: await this.calculateAverageGrade(student.user_id._id, courseId),
     }));
+  
     return await Promise.all(studentsPromise);
-
   }
-
-
+  
 
 
   private accessedInLastMonth(accessedDates: Date[]) {
