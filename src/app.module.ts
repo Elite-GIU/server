@@ -14,6 +14,7 @@ import { ModuleModule } from './modules/module/module.module';
 import { QuizModule } from './modules/quiz/quiz.module';
 import { StudentModule } from './modules/student/student.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { QuestionModule } from './modules/question/question.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ChatModule } from './modules/chat/chat.module';
     QuizModule,
     StudentModule,
     ChatModule,
+    QuestionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
