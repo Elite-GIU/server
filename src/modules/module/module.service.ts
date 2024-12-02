@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ModuleEntity } from '../../database/schemas/module.schema';
@@ -18,37 +18,25 @@ export class ModuleService {
     @InjectModel(Question.name) private readonly questionModel: Model<Question>,
   ) {}
 
-  async findModuleByTitle(courseId: string, title: string) {
-    return this.moduleModel.findOne({ course_id: courseId, title }).exec();
-  }
-
-  async getModules(courseId: string) {
-    const modules = await this.moduleModel
-      .find({ course_id: courseId })
-      .populate('content')
-      .sort({ created_at: 'asc' })
-      .exec();
-
-    return {
-      message: 'Modules retrieved successfully',
-      modules,
-    };
-  }
-  // in hierachy 
-  async getModulesHierachy(
-    courseId: string,
-    sortOrder: 'asc' | 'desc' = 'asc',
-  ): Promise<{ message: string; count: number; modules: any[] }> {
-    // Validate courseId and sortOrder
+  // Function to get all modules for a course with a given courseId
+  async getModulesHierarchy(courseId: string, sortOrder: string) {
+    // Validate sortOrder
+    // It should be either 'asc' or 'desc'
     if (!['asc', 'desc'].includes(sortOrder)) {
       throw new BadRequestException(
         `Invalid sortOrder value. Expected 'asc' or 'desc', but got '${sortOrder}'.`,
       );
     }
-      const modules = await this.moduleModel
-      .find({ course_id: courseId })
-      .populate('content') 
-      .sort({ created_at: sortOrder === 'asc' ? 1 : -1 }) 
+  
+    // Convert courseId to ObjectId
+    const courseIdObject = new Types.ObjectId(courseId);
+  
+    // Fetch and sort modules based on created_at field of the module
+    // Populate the `content` field in each module
+    const modules = await this.moduleModel
+      .find({ course_id: courseIdObject })
+      .populate('content')
+      .sort({ created_at: sortOrder as 'asc' | 'desc' }) 
       .exec();
   
     // Handle case when no modules are found
@@ -56,104 +44,94 @@ export class ModuleService {
       throw new NotFoundException(`No modules found for course with ID ${courseId}`);
     }
   
+    // Sort the nested `content` array within each module
+    const sortedModules = modules.map(module => {
+      if (module.content && Array.isArray(module.content)) {
+        module.content.sort((a: any, b: any) => {
+          const order = sortOrder === 'asc' ? 1 : -1;
+          return (new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime()) * order;
+        });
+      }
+      return module;
+    });
+  
     return {
-      message: 'Modules retrieved successfully',
-      count: modules.length,
-      modules,
+      sortedModules,
     };
   }
-  
-
-  
-
+ 
+  // Function to get a specific module by its ID
   async getModuleById(courseId: string, moduleId: string) {
+    // Convert courseId and moduleId to ObjectId
+    const courseIdObject = new Types.ObjectId(courseId);
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    
+    // Fetch the module with the given ID and populate the `content` field
     const module = await this.moduleModel
-      .findOne({ _id: moduleId, course_id: courseId })
+      .findOne({ _id: moduleIdObject, course_id: courseIdObject })
       .populate('content')
       .exec();
 
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
     return {
-      message: 'Module retrieved successfully',
       module,
     };
   }
 
-/*
+  // Function to create a new module for a course
   async createModule(courseId: string, createModuleDto: CreateModuleDto) {
-    const session = await this.moduleModel.db.startSession();
-    session.startTransaction();
-    try {
-      const { title, nrOfQuestions, assessmentType } = createModuleDto;
-  
-      const newModule = new this.moduleModel({
-        course_id: new Types.ObjectId(courseId),
-        title,
-        numberOfQuestions: nrOfQuestions,
-        assessmentType,
-        content: [],
-      });
-  
-      const savedModule = await newModule.save({ session });
-      await this.createQuestionBank(savedModule._id as Types.ObjectId, session);
-  
-      await session.commitTransaction();
-  
-      return {
-        message: 'Module and its question bank created successfully.',
-        module: savedModule,
-      };
-    } catch (error) {
-      await session.abortTransaction();
-      throw new BadRequestException(`Failed to create module: ${error.message}`);
-    } finally {
-      session.endSession();
-    }
-  }*/
-    async createModule(courseId: string, createModuleDto: CreateModuleDto) {
-      const { title, nrOfQuestions, assessmentType } = createModuleDto;
-  
-      const newModule = new this.moduleModel({
-        course_id: courseId,
-        title,
-        numberOfQuestions: nrOfQuestions,
-        assessmentType,
-        content: [],
-      });
-  
-      await newModule.save();
-  
-      // Create questionbank for the module
-      const questionbank = new this.questionbankModel({
-        module_id: newModule._id,
-        questions: [],
-      });
-      await questionbank.save();
-  
-      return {
-        message: 'Module created successfully.',
-        module: newModule,
-      };
-    }
-
-
-  async uploadContent(courseId: string, moduleId: string, uploadContentDto: any, file: Express.Multer.File) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
+    const courseIdObject = new Types.ObjectId(courseId);
+    const { title, nrOfQuestions, assessmentType } = createModuleDto;
+    
+    // Check if a module with the same title already exists
+    const existingModule = await this.moduleModel.findOne({
+      course_id: courseIdObject,
+      title,
     });
-
-    if (!module) {
-      throw new BadRequestException('Module not found or not associated with the given course.');
+    if (existingModule) {
+      throw new BadRequestException('A module with the same title already exists.');
     }
+    
+    // Create a new module
+    const newModule = new this.moduleModel({
+      course_id: courseIdObject,
+      title,
+      numberOfQuestions: nrOfQuestions,
+      assessmentType,
+      content: [],
+    });
+    await newModule.save();
 
+    // Create questionbank for the module
+    const questionbank = new this.questionbankModel({
+      module_id: newModule._id,
+      questions: [],
+    });
+    await questionbank.save();
+
+    return {
+      newModule,
+    };
+  }
+
+  // Function to upload content to a specific module of a course
+  async uploadContent(moduleId: string, uploadContentDto: any, file: Express.Multer.File) {
+    // convert moduleId to ObjectId
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    
     try {
       const filePath = path.join('uploads', file.filename);
       fs.renameSync(file.path, filePath);
 
+      // Check title is unique
+      const existingContent = await this.contentModel.findOne({
+        title: uploadContentDto.title,
+      });
+      if (existingContent) {
+        fs.unlinkSync(filePath);
+        throw new BadRequestException('Content with the same title already exists.');
+      }
+
+      // Create content
       const content = await this.contentModel.create({
         title: uploadContentDto.title,
         description: uploadContentDto.description,
@@ -161,9 +139,10 @@ export class ModuleService {
         isVisible: true,
         content: filePath,
       });
-
+      
+      // Update module with new content
       await this.moduleModel.findByIdAndUpdate(
-        moduleId,
+        moduleIdObject,
         {
           $push: { content: content._id },
         },
@@ -171,9 +150,7 @@ export class ModuleService {
       );
 
       return {
-        message: 'Content uploaded successfully',
-        contentId: content._id,
-        contentUrl: filePath,
+        filePath,
       };
     } catch (error) {
       if (file && file.path && fs.existsSync(file.path)) {

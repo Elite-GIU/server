@@ -8,14 +8,14 @@ import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadContentDto } from './dto/UploadContentDto';
-import { multerConfig } from './config/multer.config';
+import { multerConfig } from '../../config/multer.config';
 
 @ApiTags('Modules')
 @Controller('instructor/courses')
 export class ModuleController {
   constructor(private readonly moduleService: ModuleService) {}
 
-  @Get(':courseId/modules') //check courseId exist
+  @Get(':courseId/modules')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Get all modules for a course' })
@@ -33,13 +33,22 @@ export class ModuleController {
     },
   })
   async getModules(
-    @Param('courseId') courseId: string,
-    @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'asc',
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @Query('sortOrder') sortOrder: string,
   ) {
-    return await this.moduleService.getModulesHierachy(courseId); //change method to getModules
+    return await this.moduleService.getModulesHierarchy(course._id, sortOrder);
   }
 
-  @Get(':courseId/modules/:moduleId') //check courseId exist
+  @Get(':courseId/modules/:moduleId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Get a specific module' })
@@ -48,10 +57,28 @@ export class ModuleController {
   @ApiParam({ name: 'courseId', description: 'Course ID', type: String })
   @ApiParam({ name: 'moduleId', description: 'Module ID', type: String })
   async getModuleById(
-    @Param('courseId') courseId: string,
-    @Param('moduleId') moduleId: string,
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
   ) {
-    return await this.moduleService.getModuleById(courseId, moduleId);
+    return await this.moduleService.getModuleById(course._id, module._id);
   }
 
   @Post(':courseId/modules')
@@ -63,7 +90,6 @@ export class ModuleController {
   @ApiResponse({ status: 404, description: 'Course not found or not assigned to instructor.' })
   @ApiParam({ name: 'courseId', description: 'Course ID', type: String })
   async createModule(
-    @Param('courseId') courseId: string,
     @Body() createModuleDto: CreateModuleDto,
     @AssignedParam(
       {
@@ -77,15 +103,6 @@ export class ModuleController {
     )
     course: { _id: string },
   ) {
-    if (!course) {
-      throw new BadRequestException('Course validation failed: Instructor does not own the course.');
-    }
-
-    const existingModule = await this.moduleService.findModuleByTitle(course._id, createModuleDto.title);
-    if (existingModule) {
-      throw new BadRequestException('Module with this title already exists in the course.');
-    }
-
     return await this.moduleService.createModule(course._id, createModuleDto);
   }
 
@@ -98,9 +115,27 @@ export class ModuleController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', multerConfig))
   async uploadContent(
-    @Param('courseId') courseId: string,
-    @Param('moduleId') moduleId: string,
     @Body() uploadContentDto: UploadContentDto,
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -114,7 +149,7 @@ export class ModuleController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
-    return await this.moduleService.uploadContent(courseId, moduleId, uploadContentDto, file);
+    return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
   }
 
  

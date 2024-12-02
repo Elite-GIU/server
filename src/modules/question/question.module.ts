@@ -5,15 +5,10 @@ import { QuestionController } from './question.controller';
 import { ModuleSchema, ModuleEntity } from 'src/database/schemas/module.schema';
 import { Questionbank, QuestionbankSchema } from '../../database/schemas/questionbank.schema';
 import { Question, QuestionSchema } from '../../database/schemas/question.schema'; 
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: ModuleEntity.name, schema: ModuleSchema },
-      { name: Questionbank.name, schema: QuestionbankSchema },
-      { name: Question.name, schema: QuestionSchema },
-    ]),
-  ],
+  imports: [ DatabaseModule],
   providers: [QuestionService],
   controllers: [QuestionController],
 })

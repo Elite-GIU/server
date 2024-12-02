@@ -15,214 +15,116 @@ export class QuestionService {
     @InjectModel(Question.name) private readonly questionModel: Model<Question>,
   ) {}
 
-  async createQuestion(courseId: string, moduleId: string, createQuestionDto: CreateQuestionDto) {
-    // First check if module exists and belongs to course
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
-    });
+  // Function to Get all questions in the module's question bank
+  async getQuestionbank(moduleId: string) {
+    // Conver the moduleId to an ObjectId
+    const moduleIdObject = new Types.ObjectId(moduleId);
 
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
+    // Find questionbank
+    let questionbank = await this.questionbankModel
+      .findOne({ module_id: moduleIdObject})
+      .populate('questions')
+      .exec();
+
+    return {
+      questionbank,
+    };
+  }
+
+  // Function to Create a new question in the module's question bank
+  async createQuestion(moduleId: string, createQuestionDto: CreateQuestionDto) {
+    // Get the Question from the DTO
+    const { question } = createQuestionDto;
+
+    // Convert the moduleId to an ObjectId
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    
+    // Find the questionbank of the module, (it should exist)
+    let questionbank = await this.questionbankModel.findOne({ module_id: moduleIdObject });
+
+    // Check that questoin is unique
+    const questionExists = await this.questionModel
+      .findOne({ question: question })
+      .exec();
+
+    if (questionExists) {
+      throw new BadRequestException('Question already exists.');
     }
 
-    // Find or create questionbank for the module
-    let questionbank = await this.questionbankModel.findOne({ module_id: moduleId });
-    if (!questionbank) {
-      questionbank = await this.questionbankModel.create({
-        module_id: moduleId,
-        questions: [],
-      });
-    }
-    const question = await this.questionModel.create(createQuestionDto);
+    // Create the question
+    const newQuestion = await this.questionModel.create(createQuestionDto);
+
+    // save the question in the questionbank
     await this.questionbankModel.findByIdAndUpdate(
       questionbank._id,
       {
-        $push: { questions: question._id },
+        $push: { questions: newQuestion._id },
       },
       { new: true }
     );
 
     return {
-      message: 'Question created successfully',
       question,
     };
   }
 
-  async getQuestionbank(courseId: string, moduleId: string) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
-    });
-
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
-    // Find or create questionbank
-    let questionbank = await this.questionbankModel
-      .findOne({ module_id: moduleId })
-      .populate('questions')
-      .exec();
-
-    if (!questionbank) {
-      questionbank = await this.questionbankModel.create({
-        module_id: moduleId,
-        questions: [],
-      });
-    }
-
-    return {
-      message: 'Question bank retrieved successfully',
-      questionbank,
-    };
-  }
+  // Function to Update a question in the module's question bank
+  async updateQuestion(moduleId: string, questionId: string, updateQuestionDto: UpdateQuestionDto) {
+    // Convert moduleId and questionId to ObjectId instances
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const questionIdObject = new Types.ObjectId(questionId);
   
-  private async createQuestionBank(moduleId: Types.ObjectId, session?: any) {
-    try {
-      const questionbank = new this.questionbankModel({
-        module_id: moduleId,
-        questions: [],
-      });
-      
-      if (session) {
-        await questionbank.save({ session });
-      } else {
-        await questionbank.save();
-      }
-      
-      return questionbank;
-    } catch (error) {
-      throw new BadRequestException(`Failed to create question bank: ${error.message}`);
-    }
-  }
-  /*async createQuestion(courseId: string, moduleId: string, createQuestionDto: CreateQuestionDto) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
+    // Check if the question exists in the question bank of the given module
+    const questionbank = await this.questionbankModel.findOne({
+      module_id: moduleIdObject,
+      questions: questionIdObject, 
     });
-
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
-    let questionbank = await this.questionbankModel.findOne({ module_id: moduleId });
-    if (!questionbank) {
-      // Create question bank if it doesn't exist
-      questionbank = await this.createQuestionBank(new Types.ObjectId(moduleId));
-    }
-
-    const question = new this.questionModel(createQuestionDto);
-    await question.save();
-
-    await this.questionbankModel.findByIdAndUpdate(
-      questionbank._id,
-      {
-        $push: { questions: question._id },
-      },
-      { new: true }
-    );
-
-    return {
-      message: 'Question created successfully',
-      question,
-    };
-  }
-
-  async getQuestionbank(courseId: string, moduleId: string) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
-    });
-
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
-    let questionbank = await this.questionbankModel
-      .findOne({ module_id: moduleId })
-      .populate('questions')
-      .exec();
 
     if (!questionbank) {
-      // Create question bank if it doesn't exist
-      questionbank = await this.createQuestionBank(new Types.ObjectId(moduleId));
+      throw new NotFoundException('Question not found in the specified module.');
     }
-
-    return {
-      message: 'Question bank retrieved successfully',
-      questionbank,
-    };
-  }*/
-
-  async updateQuestion(
-    courseId: string,
-    moduleId: string,
-    questionId: string,
-    updateQuestionDto: UpdateQuestionDto,
-  ) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
-    });
-
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
-    const questionbank = await this.questionbankModel.findOne({ module_id: moduleId });
-    if (!questionbank || !questionbank.questions.includes(new Types.ObjectId(questionId))) {
-      throw new NotFoundException('Question not found in this module\'s question bank.');
-    }
-
+  
+    // Update the question
     const updatedQuestion = await this.questionModel.findByIdAndUpdate(
-      questionId,
+      questionIdObject,
       updateQuestionDto,
       { new: true, runValidators: true }
     );
-
-    if (!updatedQuestion) {
-      throw new NotFoundException('Question not found.');
-    }
-
+  
     return {
-      message: 'Question updated successfully',
-      question: updatedQuestion,
+      updatedQuestion,
     };
   }
-
-  async deleteQuestion(courseId: string, moduleId: string, questionId: string) {
-    const module = await this.moduleModel.findOne({
-      _id: moduleId,
-      course_id: courseId,
+  
+  async deleteQuestion(moduleId: string, questionId: string) {
+    // Convert moduleId and questionId to ObjectId instances
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const questionIdObject = new Types.ObjectId(questionId);
+    
+    // Check if the question exists in the question bank of the given module
+    const questionbank = await this.questionbankModel.findOne({
+      module_id: moduleIdObject,
+      questions: questionIdObject, 
     });
 
-    if (!module) {
-      throw new NotFoundException('Module not found or not associated with the given course.');
-    }
-
-    const questionbank = await this.questionbankModel.findOne({ module_id: moduleId });
     if (!questionbank) {
-      throw new NotFoundException('Question bank not found for this module.');
+      throw new NotFoundException('Question not found in the specified module.');
     }
 
-    // Remove question from questionbank
+    // Delete the question
+    await this.questionModel.findByIdAndDelete(questionIdObject);
+
+    // Remove the question from the questionbank
     await this.questionbankModel.findByIdAndUpdate(
       questionbank._id,
       {
-        $pull: { questions: questionId },
+        $pull: { questions: questionIdObject },
       },
       { new: true }
     );
 
-    // Delete the question
-    const deletedQuestion = await this.questionModel.findByIdAndDelete(questionId);
-    if (!deletedQuestion) {
-      throw new NotFoundException('Question not found.');
-    }
-
     return {
-      message: 'Question deleted successfully',
+      message: 'Question deleted successfully.',
     };
-  }
+ }
 }
