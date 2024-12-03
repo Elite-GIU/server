@@ -18,14 +18,33 @@ export class CourseService {
       @InjectModel(ModuleEntity.name) private readonly moduleModel: Model<ModuleEntity>,
   ) {}
   /**
-   * Retrieves all available courses.
-   * @returns List of all courses.
+   * Retrieve all courses or search by name or instructor name with pagination
+   * @param page Page number for pagination
+   * @param limit Number of courses per page
+   * @param name Optional course name filter
+   * @param instructorName Optional instructor name filter
+   * @returns List of filtered courses with pagination.
    */
-  async getAllCourses(): Promise<Course[]> {
-    const courses = await this.courseModel.find();
+  async getAllCourses(page: number, limit: number, name?: string, instructorName?: string): Promise<Course[]> {
+    const query: Record<string, any> = {};
+
+    if (name) {
+      query.name = { $regex: name, $options: 'i' }; // Case-insensitive name match
+    }
+
+    if (instructorName) {
+      query.instructor = { $regex: instructorName, $options: 'i' }; // Case-insensitive instructor name match
+    }
+
+    const courses = await this.courseModel
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
     if (!courses || courses.length === 0) {
       throw new NotFoundException('No courses available');
     }
+
     return courses;
   }
 
@@ -84,6 +103,7 @@ export class CourseService {
 
     return courses;
   }
+
 
   /**
    * Retrieves all courses for logged in instructor

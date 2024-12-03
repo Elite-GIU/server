@@ -8,13 +8,14 @@ import {
   InternalServerErrorException,
   Put,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { JwtAuthGuard} from '../auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
 import { StudentGuard } from '../../common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
@@ -27,28 +28,47 @@ import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-vali
 @Controller()
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
-    
-    @Get('/courses')
-    @Public()
-    @ApiOperation({ summary: 'Retrieve all courses for the landing page' })
-    @ApiResponse({
-      status: 200,
-      description: 'List of all available courses retrieved successfully.',
-      schema: {
-        example: [
-          {
-            _id: '648a1e9b9f4e2d1a1b2c3d4e',
-            category: 'Programming',
-            description: 'Learn Python programming from scratch',
-            difficulty_level: 'Beginner',
-          },
-        ],
-      },
-    })
-    @ApiResponse({ status: 404, description: 'No courses available.' })
-    async getAllCourses() {
-      return await this.courseService.getAllCourses();
-    }
+
+  @Get('/courses')
+  @Public()
+  @ApiOperation({ summary: 'Retrieve all courses or search by name or instructor name' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'The name of the course to search for (case-insensitive)',
+    example: 'Python',
+  })
+  @ApiQuery({
+    name: 'instructorName',
+    required: false,
+    description: 'The name of the instructor to search for (case-insensitive)',
+    example: 'John Doe',
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of courses successfully retrieved.',
+    schema: {
+      example: [
+        {
+          _id: '648a1e9b9f4e2d1a1b2c3d4e',
+          category: 'Programming',
+          description: 'Learn Python programming from scratch',
+          difficulty_level: 'Beginner',
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: 'No courses found.' })
+  async getAllCourses(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('name') name: string,
+    @Query('instructorName') instructorName: string,
+  ) {
+    return await this.courseService.getAllCourses(page, limit, name, instructorName);
+  }
 
     @Get('instuctor/courses')
     @ApiBearerAuth()
