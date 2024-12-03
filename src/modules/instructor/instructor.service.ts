@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
 import { StudentCourse } from '../../database/schemas/studentCourse.schema';
 import { User } from '../../database/schemas/user.schema';
+import { InstructorDataDto } from './dto/InstructorDataDto';
 
 @Injectable()
 export class InstructorService {
@@ -12,7 +13,7 @@ export class InstructorService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async getInstructors(page: number, limit: number, name?: string): Promise<User[]> {
+  async getInstructors(page: number, limit: number, name?: string): Promise<InstructorDataDto[]> {
     if (page < 1 || limit < 1) {
       throw new BadRequestException('Page and limit must be positive integers');
     }
@@ -26,12 +27,15 @@ export class InstructorService {
       .find(query)
       .skip((page - 1) * limit)
       .limit(limit);
-
+    //remove everything except name and email and preferences in the response , convert the response to InstructorDataDto
+    const filteredInstructors = instructors.map(instructor => {
+      const { name, email, preferences } = instructor;
+      return { name, email, preferences };
+    });
     if (!instructors || instructors.length === 0) {
       throw new NotFoundException('No instructors found');
     }
-    
-    return instructors;
+
+    return filteredInstructors;
   }
-  
 }
