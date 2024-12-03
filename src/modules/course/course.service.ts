@@ -29,13 +29,16 @@ export class CourseService {
     const query: Record<string, any> = {};
 
     if (name) {
-      query.name = { $regex: name, $options: 'i' }; // Case-insensitive name match
+      query.title = { $regex: name, $options: 'i' }; // Case-insensitive name match
     }
 
     if (instructorName) {
-      query.instructor = { $regex: instructorName, $options: 'i' }; // Case-insensitive instructor name match
+      const instructor = await this.userModel.findOne({ name: { $regex: instructorName, $options: 'i' } });
+      if (!instructor) throw new NotFoundException('Instructor not found');
+      const instructorId: Types.ObjectId = instructor._id as unknown as Types.ObjectId;
+      query.instructor_id = instructorId;
     }
-
+    
     const courses = await this.courseModel
       .find(query)
       .skip((page - 1) * limit)
