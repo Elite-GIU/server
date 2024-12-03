@@ -31,12 +31,11 @@ export class CourseService {
     if (name) {
       query.title = { $regex: name, $options: 'i' }; // Case-insensitive name match
     }
-
     if (instructorName) {
-      const instructor = await this.userModel.findOne({ name: { $regex: instructorName, $options: 'i' } });
-      if (!instructor) throw new NotFoundException('Instructor not found');
-      const instructorId: Types.ObjectId = instructor._id as unknown as Types.ObjectId;
-      query.instructor_id = instructorId;
+      const instructors = await this.userModel.find({ name: { $regex: instructorName, $options: 'i' } });
+      if (!instructors || instructors.length === 0) throw new NotFoundException('Instructor not found');
+      const instructorIds: Types.ObjectId[] = instructors.map(instructor => instructor._id as unknown as Types.ObjectId);
+      query.instructor_id = { $in: instructorIds };
     }
     
     const courses = await this.courseModel
