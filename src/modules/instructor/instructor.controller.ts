@@ -33,10 +33,9 @@ export class InstructorController {
     schema: {
       example: [
         {
-          _id: '648a1e9b9f4e2d1a1b2c3d4e',
           name: 'John Doe',
           email: 'john.doe@example.com',
-          role: 'instructor',
+          preferences: ['Python', 'Java'],
         },
       ],
     },
