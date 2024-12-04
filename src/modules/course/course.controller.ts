@@ -8,45 +8,67 @@ import {
   InternalServerErrorException,
   Put,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { JwtAuthGuard} from '../auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
 import { StudentGuard } from '../../common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 
 @ApiTags('Courses')
 @Controller()
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
-    
-    @Get('/courses')
-    @Public()
-    @ApiOperation({ summary: 'Retrieve all courses for the landing page' })
-    @ApiResponse({
-      status: 200,
-      description: 'List of all available courses retrieved successfully.',
-      schema: {
-        example: [
-          {
-            _id: '648a1e9b9f4e2d1a1b2c3d4e',
-            category: 'Programming',
-            description: 'Learn Python programming from scratch',
-            difficulty_level: 'Beginner',
-          },
-        ],
-      },
-    })
-    @ApiResponse({ status: 404, description: 'No courses available.' })
-    async getAllCourses() {
-      return await this.courseService.getAllCourses();
-    }
+
+  @Get('/courses')
+  @Public()
+  @ApiOperation({ summary: 'Retrieve all courses or search by name or instructor name' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'The name of the course to search for (case-insensitive)',
+    example: 'Python',
+  })
+  @ApiQuery({
+    name: 'instructorName',
+    required: false,
+    description: 'The name of the instructor to search for (case-insensitive)',
+    example: 'John Doe',
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of courses successfully retrieved.',
+    schema: {
+      example: [
+        {
+          _id: '648a1e9b9f4e2d1a1b2c3d4e',
+          category: 'Programming',
+          description: 'Learn Python programming from scratch',
+          difficulty_level: 'Beginner',
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 404, description: 'No courses found.' })
+  async getAllCourses(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('name') name: string,
+    @Query('instructorName') instructorName: string,
+  ) {
+    return await this.courseService.getAllCourses(page, limit, name, instructorName);
+  }
 
     @Get('instuctor/courses')
     @ApiBearerAuth()
@@ -76,11 +98,15 @@ export class CourseController {
     @ApiParam({ name: 'id', required: true, description: 'Course ID' })
     async updateInstructorCourse(
       @Body() updateCourseDto : UpdateCourseDto,
-      @GetUser('userId') userId: string,  
-      @ExistParam({idKey: 'id', modelName: 'Course'}, CheckExistValidatorPipe) course: {id: string, modelName: string},
+      @AssignedParam({
+        modelName: 'Course', 
+        firstAttrName: 'instructor_id', 
+        secondAttrName: '_id', 
+        firstKey: 'userId', 
+        secondKey: 'id',
+      }, CheckAssignedValidatorPipe) course : {instructor_id: string, _id: string}
     ) { 
-        console.log(`Course ID: ${course.id}`);
-        return await this.courseService.updateInstructorCourse(updateCourseDto, userId, course.id);
+        return await this.courseService.updateInstructorCourse(updateCourseDto, course.instructor_id, course._id);
     }
 
 
@@ -93,7 +119,9 @@ export class CourseController {
     description: 'List of courses for the student retrieved successfully.',
   })
   @ApiResponse({ status: 404, description: 'No courses found for this student.' })
-  getStudentCourses(@GetUser('userId') userId: string) {
+  getStudentCourses(
+    @GetUser('userId') userId: string
+  ) {
     return this.courseService.getStudentCourses(userId);
   }
 
@@ -108,10 +136,16 @@ export class CourseController {
   @ApiResponse({ status: 404, description: 'Course not found for this student.' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   getStudentCourseById(
-    @GetUser('userId') userId: string,
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
+    @AssignedParam({
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'id',
+    }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
+
   ) {
-    return this.courseService.getStudentCourseWithModules(userId, course.id);
+    return this.courseService.getStudentCourseWithModules(course_id);
   }
 
   @Post('student/courses/:id/assign')

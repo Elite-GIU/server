@@ -39,12 +39,10 @@ export class DashboardService {
   }
 
   async getStudentQuizzes(userId: string) {
-    console.log(userId);
     const quizzes = await this.quizResponseModel
     .find({ user_id: new Types.ObjectId(userId) })
     .populate({ path: 'module_id', populate: { path: 'course_id' } })  
     .sort({ createdAt: -1 });  
-    console.log(userId);
     return quizzes.map((quiz) => ({
         quizId: quiz._id,
         grade: quiz.score,
@@ -67,22 +65,36 @@ export class DashboardService {
     return moduleDetails;
   }
 
-  async getInstructorCourseStudents(courseId: string, page: number, limit: number) {
-    const students = await this.studentCourseModel
+  async getInstructorCourseStudents(
+    courseId: string,
+    page: number,
+    limit: number,
+    name: string
+  ) {
+    const allStudents = await this.studentCourseModel
       .find({ course_id: new Types.ObjectId(courseId) })
-      .populate('user_id')
-      .skip((page - 1) * limit)
-      .limit(limit);
-    const studentsPromise= students.map(async(student) => ({
+      .populate('user_id');
+  
+    const filteredStudents = name
+      ? allStudents.filter(student =>
+          student.user_id.name.toLowerCase().includes(name.toLowerCase())
+        )
+      : allStudents;
+  
+    const paginatedStudents = filteredStudents.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+  
+    const studentsPromise = paginatedStudents.map(async student => ({
       studentId: student.user_id._id,
       studentName: student.user_id.name,
       averageGrade: await this.calculateAverageGrade(student.user_id._id, courseId),
     }));
+  
     return await Promise.all(studentsPromise);
-
   }
-
-
+  
 
 
   private accessedInLastMonth(accessedDates: Date[]) {
@@ -97,17 +109,49 @@ export class DashboardService {
   
     for (const course of courses) {
       const studentCount = await this.studentCourseModel.countDocuments({ course_id: course._id });
-      
+      const studentCompletedCourse = await this.studentCourseModel.countDocuments({ course_id: course._id, completion_percentage: 100 });
+      const segmentedStudents = await this.segmentStudentsPerCourse(course._id);
+
       courseDetails.push({
         courseId: course._id,
         courseName: course.title,
         description: course.description, 
-        studentCount: studentCount
+        studentCount: studentCount,
+        studentsCompletedCourse: studentCompletedCourse,
+        performanceMetrics: segmentedStudents
       });
     }
   
     return courseDetails;
   }
+
+  private async segmentStudentsPerCourse(courseId: string) {
+    const students = await this.studentCourseModel.find({ course_id: courseId });
+
+    const segmentation = {
+      belowAverage: 0,
+      average: 0,
+      aboveAverage: 0,
+      excellent: 0,
+    };
+
+    for (const student of students) {
+      const averageGrade = await this.calculateAverageGrade(student.user_id, courseId);
+  
+      if (averageGrade < 50) {
+        segmentation.belowAverage++;
+      } else if (averageGrade >= 50 && averageGrade < 75) {
+        segmentation.average++;
+      } else if (averageGrade >= 75 && averageGrade < 90) {
+        segmentation.aboveAverage++;
+      } else if (averageGrade >= 90) {
+        segmentation.excellent++;
+      }
+    }
+  
+    return segmentation;
+  }
+  
 
   private async getModuleDetails(modules: any[]) {
     const moduleDetails = [];
@@ -130,7 +174,7 @@ export class DashboardService {
   }
 
 
-  private async calculateAverageGrade(userId: string, courseId: string) {
+  public async calculateAverageGrade(userId: string, courseId: string) {
     const quizzes = await this.getStudentQuizzesPerCourse(userId, courseId);
     const grades = quizzes.map((quiz) => quiz.score || 0);
     return this.calculateAverage(grades);

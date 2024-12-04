@@ -1,4 +1,4 @@
 import { Controller } from '@nestjs/common';
 
-@Controller('quiz')
+@Controller()
 export class QuizController {}

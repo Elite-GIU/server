@@ -18,14 +18,35 @@ export class CourseService {
       @InjectModel(ModuleEntity.name) private readonly moduleModel: Model<ModuleEntity>,
   ) {}
   /**
-   * Retrieves all available courses.
-   * @returns List of all courses.
+   * Retrieve all courses or search by name or instructor name with pagination
+   * @param page Page number for pagination
+   * @param limit Number of courses per page
+   * @param name Optional course name filter
+   * @param instructorName Optional instructor name filter
+   * @returns List of filtered courses with pagination.
    */
-  async getAllCourses(): Promise<Course[]> {
-    const courses = await this.courseModel.find();
+  async getAllCourses(page: number, limit: number, name?: string, instructorName?: string): Promise<Course[]> {
+    const query: Record<string, any> = {};
+
+    if (name) {
+      query.title = { $regex: name, $options: 'i' }; // Case-insensitive name match
+    }
+    if (instructorName) {
+      const instructors = await this.userModel.find({ name: { $regex: instructorName, $options: 'i' } });
+      if (!instructors || instructors.length === 0) throw new NotFoundException('Instructor not found');
+      const instructorIds: Types.ObjectId[] = instructors.map(instructor => instructor._id as unknown as Types.ObjectId);
+      query.instructor_id = { $in: instructorIds };
+    }
+    
+    const courses = await this.courseModel
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
     if (!courses || courses.length === 0) {
       throw new NotFoundException('No courses available');
     }
+
     return courses;
   }
 
@@ -85,6 +106,7 @@ export class CourseService {
     return courses;
   }
 
+
   /**
    * Retrieves all courses for logged in instructor
    * @param userId ID of the instuctor logged in.
@@ -112,26 +134,15 @@ async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: stri
 }
 
 async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: string, id: string) : Promise<Course> {
-
     const course = await this.courseModel.findById(id);
-
     const instuctorIdObject = new Types.ObjectId(instructor_id);
-
-    if(!course)
-        throw new NotFoundException('Course not found');
-
     const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title: updateCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    if (!course.instructor_id.equals(instuctorIdObject))
-        throw new ForbiddenException('You don\'t have access to this course');
-
     Object.assign(course, updateCourseDto);
-
     return await course.save()
-
 }
 
   async getStudentCourses(userId: string) {
@@ -142,18 +153,14 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     return studentCourses.map(studentCourse => studentCourse.course_id);
   }
 
-  async getStudentCourseWithModules(userId: string, courseId: string) {
-    const studentCourse = await this.studentCourseModel
-      .findOne({ user_id: new Types.ObjectId(userId), course_id: new Types.ObjectId(courseId) })
-      .populate('course_id');
-  
-    if (!studentCourse) {
-      throw new NotFoundException('Course not found for this student');
-    }
-    const course = studentCourse.course_id;
+  async getStudentCourseWithModules(courseId: string) {
+    console.log('courseId', courseId);
+    const course = await this.courseModel.findById(courseId);
+    console.log('course', course);
     const modules = await this.moduleModel
       .find({ course_id: course._id })
-      .select('-content -resources');
+      .select('-content -resources')
+      .sort({ createdAt: 1 });
   
     return {
       course,

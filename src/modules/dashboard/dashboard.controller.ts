@@ -9,10 +9,13 @@ import {
     ApiOperation,
     ApiResponse,
     ApiBearerAuth,
-    ApiParam
+    ApiParam,
+    ApiQuery
   } from '@nestjs/swagger';
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
+import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()
@@ -44,31 +47,44 @@ export class DashboardController {
     return this.dashboardService.getInstructorDashboard(instructorId);
   }
 
-  // Example of using custom params 
-  // It takes two arguments, the first is an object with the idKey and modelName, the second is the context
-  // Don't forget to call @ApiParam() in the swagger documentation for the route if you are using this decorator @ExistParam
   @UseGuards(JwtAuthGuard, InstructorGuard)
-  @UsePipes(CheckExistValidatorPipe)
   @Get('instructor/course/:id')
   @ApiOperation({ summary: 'Get the instructors course' })
   @ApiResponse({ status: 200, description: 'Course returned successfully' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   async getInstructorCourseDashboard (
-    @ExistParam({ idKey: 'id', modelName: 'Course' }) course: { id: string, modelName: string } 
+    @AssignedParam({
+      modelName: 'Course', 
+      firstAttrName: 'instructor_id', 
+      secondAttrName: '_id', 
+      firstKey: 'userId', 
+      secondKey: 'id',
+    }, CheckAssignedValidatorPipe) course: { _id: string} 
   ){
-    return this.dashboardService.getInstructorCourseDashboard(course.id);
+    return this.dashboardService.getInstructorCourseDashboard(course._id);
   }
 
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @Get('instructor/course/:id/students')
   @ApiOperation({ summary: 'Get the students on an instructors course' })
   @ApiResponse({ status: 200, description: 'Students returned successfully' })
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiQuery({ name: 'name', required: false, description: 'Search for students by name' })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number'})
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit'})
   async getInstructorCourseStudents(
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Query('name') name: string,
+    @AssignedParam({
+      modelName: 'Course', 
+      firstAttrName: 'instructor_id', 
+      secondAttrName: '_id', 
+      firstKey: 'userId', 
+      secondKey: 'id',
+    }, CheckAssignedValidatorPipe) course: { _id: string}
   ) {
-    return this.dashboardService.getInstructorCourseStudents(course.id, page, limit);
+    return this.dashboardService.getInstructorCourseStudents(course._id, page, limit, name);
   }
 }
 
