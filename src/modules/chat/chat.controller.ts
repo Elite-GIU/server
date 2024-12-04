@@ -8,13 +8,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
-import { RoomMessageDto } from './dto/RoomMessageDto';
+import { MessageDto } from './dto/MessageDto';
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { ThreadDto } from './dto/ThreadDto';
-import { ThreadMessageDto } from './dto/ThreadMessageDto';
-import { ThreadMessageReplyDto } from './dto/ThreadMessageReplyDto';
 @Controller('chat')
 @ApiTags('Chat')
 @UseGuards(JwtAuthGuard)
@@ -80,7 +78,7 @@ export class ChatController {
       id: string;
       modelName: string;
     },
-    @Body() messageData: RoomMessageDto,
+    @Body() messageData: MessageDto,
   ) {
     return this.chatService.sendMessage(userId, course.id, messageData);
   }
@@ -111,7 +109,7 @@ export class ChatController {
       id: string;
       modelName: string;
     },
-    @Body() messageData: RoomMessageDto,
+    @Body() messageData: MessageDto,
   ) {
     return this.chatService.replyToMessage(
       userId,
@@ -128,8 +126,8 @@ export class ChatController {
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   @ApiOperation({ summary: 'Get threads of a course' })
   @ApiResponse({ status: 200, description: 'Threads fetched successfully' })
-  @ApiResponse({ status: 404, description: 'Thread Not Found' })
-  async getThreadMessages(
+  @ApiResponse({ status: 400, description: 'Invalid course ID' })
+  async getCourseThreads(
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
     course: {
       id: string;
@@ -147,8 +145,8 @@ export class ChatController {
     status: 200,
     description: 'Thread messages fetched successfully',
   })
-  @ApiResponse({ status: 404, description: 'Thread not found' })
-  async getThreadReplies(
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
+  async getThreadMessages(
     @ExistParam(
       { idKey: 'courseId', modelName: 'Course' },
       CheckExistValidatorPipe,
@@ -179,8 +177,8 @@ export class ChatController {
     status: 200,
     description: 'Message replies fetched successfully',
   })
-  @ApiResponse({ status: 404, description: 'Reply not found' })
-  async getMessageReplies(
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
+  async getThreadMessageReplies(
     @ExistParam(
       { idKey: 'courseId', modelName: 'Course' },
       CheckExistValidatorPipe,
@@ -198,7 +196,7 @@ export class ChatController {
       modelName: string;
     },
     @ExistParam(
-      { idKey: 'messageId', modelName: 'Message' },
+      { idKey: 'messageId', modelName: 'ThreadMessage' },
       CheckExistValidatorPipe,
     )
     message: {
@@ -219,6 +217,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Post a new thread' })
   @ApiResponse({ status: 201, description: 'Thread created successfully' })
   @ApiResponse({ status: 404, description: 'Thread not found' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
   async postThread(
     @GetUser('userId') userId: string,
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
@@ -238,6 +237,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Send a message in a thread' })
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
   @ApiResponse({ status: 404, description: 'Message not found' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
   async sendMessageToThread(
     @GetUser('userId') userId: string,
     @ExistParam(
@@ -256,7 +256,7 @@ export class ChatController {
       id: string;
       modelName: string;
     },
-    @Body() threadMessageData: ThreadMessageDto,
+    @Body() threadMessageData: MessageDto,
   ) {
     return this.chatService.sendMessageToThread(
       userId,
@@ -274,6 +274,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Reply to a thread message' })
   @ApiResponse({ status: 201, description: 'Reply sent successfully' })
   @ApiResponse({ status: 404, description: 'Reply not found' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
   async replyToThreadMessage(
     @GetUser('userId') userId: string,
     @ExistParam(
@@ -293,14 +294,14 @@ export class ChatController {
       modelName: string;
     },
     @ExistParam(
-      { idKey: 'messageId', modelName: 'Message' },
+      { idKey: 'messageId', modelName: 'ThreadMessage' },
       CheckExistValidatorPipe,
     )
     message: {
       id: string;
       modelName: string;
     },
-    @Body() threadMessageReplyData: ThreadMessageReplyDto,
+    @Body() threadMessageReplyData: MessageDto,
   ) {
     return this.chatService.replyToThreadMessage(
       userId,

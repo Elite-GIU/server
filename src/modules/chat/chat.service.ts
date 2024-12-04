@@ -1,10 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Model, Schema, Types } from 'mongoose';
 import { RoomMessage } from 'src/database/schemas/roomMessage.schema';
-import { RoomMessageDto } from './dto/RoomMessageDto';
+import { MessageDto } from './dto/MessageDto';
 import { ThreadDto } from './dto/ThreadDto';
-import { ThreadMessageDto } from './dto/ThreadMessageDto';
-import { ThreadMessageReplyDto } from './dto/ThreadMessageReplyDto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/database/schemas/user.schema';
 import { Course } from 'src/database/schemas/course.schema';
@@ -66,7 +64,7 @@ export class ChatService {
   async sendMessage(
     sender_id: string,
     course_id: string,
-    messageData: RoomMessageDto,
+    messageData: MessageDto,
   ) {
     try {
       const { content } = messageData;
@@ -96,7 +94,7 @@ export class ChatService {
     sender_id: string,
     course_id: string,
     messageId: string,
-    messageData: RoomMessageDto,
+    messageData: MessageDto,
   ) {
     try {
       const { content } = messageData;
@@ -161,7 +159,6 @@ export class ChatService {
     try {
       const messages = await this.threadMessageModel
         .find({
-          course_id: new Types.ObjectId(course_id),
           thread_id: new Types.ObjectId(thread_id),
         })
         .populate('sender_id', 'name role')
@@ -189,9 +186,7 @@ export class ChatService {
     try {
       const replies = await this.threadMessageReplyModel
         .find({
-          course_id: new Types.ObjectId(course_id),
-          thread_id: new Types.ObjectId(thread_id),
-          parent_id: new Types.ObjectId(message_id),
+          message_id: new Types.ObjectId(message_id),
         })
         .populate('sender_id', 'name role')
         .sort({ createdAt: 1 });
@@ -243,19 +238,64 @@ export class ChatService {
   }
   async sendMessageToThread(
     userId: string,
-    id: string,
-    id1: string,
-    messageData: ThreadMessageDto,
+    course_id: string,
+    thread_id: string,
+    messageData: MessageDto,
   ) {
-    return 1;
+    try {
+      const { content } = messageData;
+      const message = new this.threadMessageModel({
+        course_id: new Types.ObjectId(course_id),
+        thread_id: new Types.ObjectId(thread_id),
+        sender_id: new Types.ObjectId(userId),
+        content,
+      });
+      await this.threadMessageModel.create(message);
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Message sent successfully',
+        data: message,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
   async replyToThreadMessage(
-    id: string,
-    id1: string,
-    id2: string,
-    id3: string,
-    messageData: ThreadMessageReplyDto,
+    userId: string,
+    course_id: string,
+    thread_id: string,
+    message_id: string,
+    messageData: MessageDto,
   ) {
-    return 1;
+    try {
+      const { content } = messageData;
+      const reply = new this.threadMessageReplyModel({
+        course_id: new Types.ObjectId(course_id),
+        thread_id: new Types.ObjectId(thread_id),
+        message_id: new Types.ObjectId(message_id),
+        sender_id: new Types.ObjectId(userId),
+        content,
+      });
+      await this.threadMessageReplyModel.create(reply);
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Reply sent successfully',
+        data: reply,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
