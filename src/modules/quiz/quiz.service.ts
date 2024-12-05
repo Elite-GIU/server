@@ -24,8 +24,6 @@ export class QuizService {
   async generateQuiz(courseId: string, moduleId: string, studentId: string) {
     const module_id = new Types.ObjectId(moduleId);
     const module = await this.moduleModel.findById(module_id);
-    if (!module) 
-        throw new NotFoundException('Module not found');
 
     const questionBank = await this.questionbankModel.findOne({ module_id: module_id }).exec();
     if (!questionBank) 
@@ -52,15 +50,19 @@ export class QuizService {
       module.numberOfQuestions
     );
 
-    return {
-        user_id: studentId,
+    const quizResponse = await this.quizResponseModel.create({
+        user_id: new Types.ObjectId(studentId),
         module_id: module_id,
         questions: selectedQuestions.map(q => q._id),
+    })
+
+    return {
+        quizResponse,
         choices: selectedQuestions.map(q => q.choices)
     }
   }
 
-  async submitQuiz(courseId: string, moduleId: string, submitQuizDto: SubmitQuizDto, studentId: string) {
+  async submitQuiz(courseId: string, moduleId: string, submitQuizDto: SubmitQuizDto, studentId: string, quizResponseId: string) {
     if(submitQuizDto.answers.length !== submitQuizDto.questions.length)
         throw new BadRequestException('Please answer all questions before submitting.');
 
@@ -70,70 +72,75 @@ export class QuizService {
         const question_id = new Types.ObjectId(question);
         questionsIdObjectArray.push(question_id);
     }
+
+    const quizResponse_id = new Types.ObjectId(quizResponseId);
+    await this.checkQuestionIds(questionsIdObjectArray, quizResponse_id);
+
     const submittedQuestions = await this.questionModel.find({ _id: { $in: questionsIdObjectArray } }).exec();
 
     const score = this.calculateQuizScore(submittedQuestions, submitQuizDto);
 
-    const quizResponse = await this.quizResponseModel.create({
-        user_id: new Types.ObjectId(studentId),
-        module_id: new Types.ObjectId(moduleId),
-        questions: questionsIdObjectArray,
+    await this.handleCompletionPercentage(studentId, moduleId, courseId, score);
+
+    const quizResponse = await this.quizResponseModel.findByIdAndUpdate(
+      quizResponse_id, 
+      {
         answers: submitQuizDto.answers,
         score,
         finalGrade: score >= 50 ? 'passed' : 'failed'
-    })
-
-    if(score >= 50) {
-        await this.studentCourseModel.findOneAndUpdate({
-            user_id: new Types.ObjectId(studentId),
-            course_id: new Types.ObjectId(courseId)
-        }, 
-        {
-            $inc: { completion_percentage: 1 },
-            $push: { last_accessed: new Date() }
-        }
-        );
-    }
+      },
+      { new: true }
+    )
 
     return quizResponse;
   }
 
-  async getQuizFeedback(moduleId: string, studentId: string, quizResponseId: string) {
-    const module_id = new Types.ObjectId(moduleId);
-    const user_id = new Types.ObjectId(studentId);
+  async getQuizFeedback(quizResponseId: string) {
     const quizResponse_id = new Types.ObjectId(quizResponseId);
-
     const quizResponse = await this.quizResponseModel.findById(quizResponse_id).exec();
-    
-    if(!quizResponse) 
-        throw new NotFoundException('No quiz response found for this module');
 
-    const questions = await this.questionModel.find({
-        _id: { $in: quizResponse.questions }
-    }).exec();
+    // Create a map of question IDs to their answers
+    const questionAnswerMap = new Map(
+        quizResponse.questions.map((qId, index) => [qId.toString(), quizResponse.answers[index]])
+    );
 
-    const feedback = questions.map((question, index) => {
-        const isCorrect = question.right_choice === quizResponse.answers[index];
+    // Fetch questions and maintain order
+    const questions = await Promise.all(
+        quizResponse.questions.map(qId => 
+            this.questionModel.findById(qId).exec()
+        )
+    );
+
+    const feedback = questions.map((question) => {
+        const yourAnswer = questionAnswerMap.get(question._id.toString());
+        const isCorrect = question.right_choice === yourAnswer;
         return {
             question: question.question,
-            yourAnswer: quizResponse.answers[index],
+            yourAnswer,
             correctAnswer: question.right_choice,
             isCorrect
-        }
+        };
     });
 
-    const module = await this.moduleModel.findById(moduleId).exec();
-    const message = quizResponse.score >= 50? 
-        'You passed the quiz, well done!' : `You failed the quiz, please study the ${module.title} module again`;
+    const module = await this.moduleModel.findById(quizResponse.module_id).exec();
+    const message = quizResponse.score >= 50 ? 
+        'You passed the quiz, well done!' : 
+        `You failed the quiz, please study the ${module.title} module again`;
 
     return { score: quizResponse.score, feedback, message };
   }
 
   private calculateQuizScore(questions: Question[], submitQuizDto: SubmitQuizDto) {
+    const questionMap = new Map(
+        questions.map(q => [q._id.toString(), q])
+    );
+
     let correctAnswers = 0;
-    questions.forEach((question, index) => {
-        if(question.right_choice === submitQuizDto.answers[index])
+    submitQuizDto.questions.forEach((questionId, index) => {
+        const question = questionMap.get(questionId);
+        if (question && question.right_choice === submitQuizDto.answers[index]) {
             correctAnswers++;
+        }
     });
 
     return (correctAnswers / questions.length) * 100;
@@ -150,5 +157,43 @@ export class QuizService {
 
   private filterQuestionsByType(questions: Question[], type: string) {
     return questions.filter(q => q.type === type);
+  }
+
+  private async handleCompletionPercentage(studentId: string, moduleId: string, courseId: string, score: number) {
+    const studentQuizResponses = await this.quizResponseModel.find({
+        user_id: new Types.ObjectId(studentId),
+        module_id: new Types.ObjectId(moduleId)
+    }).exec();
+
+    const passedQuizResponses = studentQuizResponses.filter(response => response.finalGrade === 'passed');
+
+    if(score >= 50 && passedQuizResponses.length === 0) {
+        await this.studentCourseModel.findOneAndUpdate({
+            user_id: new Types.ObjectId(studentId),
+            course_id: new Types.ObjectId(courseId)
+        },
+        {
+            $inc: { completion_percentage: 1 },
+            $push: { last_accessed: new Date() }
+        });
+    } else {
+        await this.studentCourseModel.findOneAndUpdate({
+            user_id: new Types.ObjectId(studentId),
+            course_id: new Types.ObjectId(courseId)
+        },
+        {
+            $push: { last_accessed: new Date() }
+        });
+    }
+  }
+
+  private async checkQuestionIds(questionsIdObjectArray: Types.ObjectId[], quizResponse_id: Types.ObjectId) {
+    const quizResponseQuestions = await this.quizResponseModel.findById(quizResponse_id).exec();
+
+    for (let i = 0; i < questionsIdObjectArray.length; i++) {
+      if (!questionsIdObjectArray[i].equals(quizResponseQuestions.questions[i])) {
+        throw new BadRequestException('Questions submitted do not match the original quiz');
+      }
+    }
   }
 }
