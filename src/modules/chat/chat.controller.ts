@@ -131,19 +131,23 @@ export class ChatController {
   //---------------------------------- FORUMS ----------------------------------\\
 
   // GET /forums/courses/:courseId - Get threads of a course
-  @Get('forums/courses/:id')
+  @Get('forums/courses/:id/')
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
-  @ApiParam({ name: 'title', required: false, description: 'Course title' })
   @ApiOperation({ summary: 'Get threads of a course' })
   @ApiResponse({ status: 200, description: 'Threads fetched successfully' })
   @ApiResponse({ status: 400, description: 'Invalid course ID' })
+  @ApiQuery({
+    name: 'title',
+    required: false,
+    description: 'Search for a thread by title',
+  })
   async getCourseThreads(
-    @Query('title') title: string,
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
     course: {
       id: string;
       modelName: string;
     },
+    @Query('title') title: string,
   ) {
     return this.chatService.getCourseThreads(course.id, title);
   }
@@ -151,11 +155,6 @@ export class ChatController {
   @Get('forums/courses/:courseId/threads/:threadId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
-  @ApiQuery({
-    name: 'title',
-    required: false,
-    description: 'Search for a thread by title',
-  })
   @ApiOperation({ summary: 'Get specific thread messages' })
   @ApiResponse({
     status: 200,
