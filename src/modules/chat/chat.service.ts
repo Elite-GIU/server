@@ -123,10 +123,13 @@ export class ChatService {
 
   //---------------------------------- FORUMS ----------------------------------\\
 
-  async getCourseThreads(course_id: string) {
+  async getCourseThreads(course_id: string, title: string) {
     try {
       const threads = await this.threadModel
-        .find({ course_id: new Types.ObjectId(course_id) })
+        .find({
+          course_id: new Types.ObjectId(course_id),
+          ...(title && { title: { $regex: title, $options: 'i' } }),
+        })
         .populate({
           path: 'creator_id',
           select: 'name role',

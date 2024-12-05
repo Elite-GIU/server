@@ -1,9 +1,18 @@
-import { Controller, Get, Post, UseGuards, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Body,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -124,22 +133,29 @@ export class ChatController {
   // GET /forums/courses/:courseId - Get threads of a course
   @Get('forums/courses/:id')
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'title', required: false, description: 'Course title' })
   @ApiOperation({ summary: 'Get threads of a course' })
   @ApiResponse({ status: 200, description: 'Threads fetched successfully' })
   @ApiResponse({ status: 400, description: 'Invalid course ID' })
   async getCourseThreads(
+    @Query('title') title: string,
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
     course: {
       id: string;
       modelName: string;
     },
   ) {
-    return this.chatService.getCourseThreads(course.id);
+    return this.chatService.getCourseThreads(course.id, title);
   }
   // GET chat/forums/course:id/threads/thread:id - Get specific thread messages
   @Get('forums/courses/:courseId/threads/:threadId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
+  @ApiQuery({
+    name: 'title',
+    required: false,
+    description: 'Search for a thread by title',
+  })
   @ApiOperation({ summary: 'Get specific thread messages' })
   @ApiResponse({
     status: 200,
