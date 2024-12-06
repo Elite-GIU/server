@@ -9,6 +9,8 @@ import { Course } from 'src/database/schemas/course.schema';
 import { ThreadMessage } from 'src/database/schemas/threadMessage.schema';
 import { ThreadMessageReply } from 'src/database/schemas/threadMessageReply.schema';
 import { Thread } from 'src/database/schemas/thread.schema';
+import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
+import { RoomDto } from './dto/RoomDto';
 
 @Injectable()
 export class ChatService {
@@ -22,11 +24,35 @@ export class ChatService {
     private readonly threadMessageModel: Model<ThreadMessage>,
     @InjectModel(ThreadMessageReply.name)
     private readonly threadMessageReplyModel: Model<ThreadMessageReply>,
+    @InjectModel(StudyRoom.name) private readonly roomModel: Model<StudyRoom>,
   ) {}
 
-  async getRoomMessages(courseId: string) {
+  async getCourseRooms(userId: string, course_id: string) {
+    try {
+      const rooms = await this.roomModel
+        .find({
+          course_id: new Types.ObjectId(course_id),
+        })
+        .sort({ createdAt: 1 });
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Rooms fetched successfully',
+        data: rooms,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getRoomMessages(course_id: string, room_id: string) {
     const messages = await this.roomMessageModel
-      .find({ course_id: new Types.ObjectId(courseId) })
+      .find({ room_id: new Types.ObjectId(room_id) })
       .populate('sender_id', 'name role')
       .sort({ createdAt: 1 });
 
@@ -37,11 +63,11 @@ export class ChatService {
     };
   }
 
-  async getRoomMessage(course_id: string, message_id: string) {
+  async getRoomMessage(course_id: string, room_id: string, message_id: string) {
     try {
       const message = await this.roomMessageModel
         .findOne({
-          course_id: new Types.ObjectId(course_id),
+          //course_id: new Types.ObjectId(course_id),
           _id: new Types.ObjectId(message_id),
         })
         .populate('sender_id', 'name role');
@@ -61,15 +87,45 @@ export class ChatService {
       );
     }
   }
+  async createRoom(userId: string, id: string, roomData: RoomDto) {
+    try {
+      const { title, description, members_list } = roomData;
+      const room = new this.roomModel({
+        course_id: new Types.ObjectId(id),
+        creator_id: new Types.ObjectId(userId),
+        members_list: members_list.map((member) => new Types.ObjectId(member)),
+        title,
+        description,
+      });
+
+      await this.roomModel.create(room);
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Room created successfully',
+        data: room,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   async sendMessage(
     sender_id: string,
     course_id: string,
+    room_id: string,
     messageData: MessageDto,
   ) {
     try {
       const { content } = messageData;
       const message = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
+        room_id: new Types.ObjectId(room_id),
         sender_id: new Types.ObjectId(sender_id),
         content,
       });
@@ -93,6 +149,7 @@ export class ChatService {
   async replyToMessage(
     sender_id: string,
     course_id: string,
+    room_id: string,
     messageId: string,
     messageData: MessageDto,
   ) {
@@ -102,6 +159,7 @@ export class ChatService {
       const reply = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
         sender_id: new Types.ObjectId(sender_id),
+        room_id: new Types.ObjectId(room_id),
         parent_id: new Types.ObjectId(messageId),
         content,
       });
