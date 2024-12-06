@@ -21,7 +21,7 @@ export class QuizResponse extends Document {
   @Prop({ 
     required: false, 
     enum: ['passed', 'failed'],
-    default: 'passed'})
+    default: 'failed'})
   finalGrade: string; 
 
 }
