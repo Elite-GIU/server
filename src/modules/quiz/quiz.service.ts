@@ -33,7 +33,7 @@ export class QuizService {
     if (!questions.length) 
         throw new NotFoundException('No questions found for this module');
 
-    const avgGrade = await this.dashboardService.calculateAverageGrade(courseId, studentId);
+    const avgGrade = await this.dashboardService.calculateAverageGrade(studentId, courseId);
     
     let targetDifficulty: number;
     if (avgGrade < 50) targetDifficulty = 1;
@@ -99,12 +99,10 @@ export class QuizService {
     const quizResponse_id = new Types.ObjectId(quizResponseId);
     const quizResponse = await this.quizResponseModel.findById(quizResponse_id).exec();
 
-    // Create a map of question IDs to their answers
     const questionAnswerMap = new Map(
         quizResponse.questions.map((qId, index) => [qId.toString(), quizResponse.answers[index]])
     );
 
-    // Fetch questions and maintain order
     const questions = await Promise.all(
         quizResponse.questions.map(qId => 
             this.questionModel.findById(qId).exec()
