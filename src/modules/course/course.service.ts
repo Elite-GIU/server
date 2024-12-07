@@ -160,7 +160,7 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     const modules = await this.moduleModel
       .find({ course_id: course._id })
       .select('-content -resources')
-      .sort({ createdAt: 1 });
+      .sort({ created_at: 1 });
   
     return {
       course,
