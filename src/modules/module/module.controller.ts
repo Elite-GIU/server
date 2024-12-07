@@ -112,7 +112,6 @@ export class ModuleController {
       CheckAssignedValidatorPipe,
     ) module: { _id: string },
   ) {
-    console.log("hello here");
     return await this.moduleService.getModuleById(course.course_id, module._id);
   }
 
