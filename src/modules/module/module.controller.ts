@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadContentDto } from './dto/UploadContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
+import { GetUser } from 'src/common/decorators/getUser.decorator';
 
 @ApiTags('Modules')
 @Controller()
@@ -111,8 +112,9 @@ export class ModuleController {
       },
       CheckAssignedValidatorPipe,
     ) module: { _id: string },
+    @GetUser('userId') userId: string
   ) {
-    return await this.moduleService.getModuleById(course.course_id, module._id);
+    return await this.moduleService.getStudentModuleById(course.course_id, module._id, userId);
   }
 
   @Post('instructor/courses/:courseId/modules')
