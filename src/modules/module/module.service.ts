@@ -98,12 +98,12 @@ export class ModuleService {
         throw new Error('No previous module found.');
       }
     
-      const quizResponse = await this.quizResponseModel.findOne({
+      const quizResponse = await this.quizResponseModel.find({
         user_id: studentIdObject,
         module_id: previousModule._id,
-      });
+      }).sort({ score: -1 });
 
-      if (!quizResponse || quizResponse.finalGrade==='failed') {
+      if (!quizResponse || quizResponse[0].finalGrade==='failed') {
         throw new ForbiddenException(`Student has not completed the quiz for the previous module. Please check module ${previousModule.title}`);
       }
 
