@@ -103,10 +103,9 @@ export class ModuleService {
         module_id: previousModule._id,
       }).sort({ score: -1 });
 
-      if (!quizResponse || quizResponse[0].finalGrade==='failed') {
-        throw new ForbiddenException(`Student has not completed the quiz for the previous module. Please check module ${previousModule.title}`);
+      if (!quizResponse.length || quizResponse[0].finalGrade === 'failed') {
+        throw new ForbiddenException('You must pass the previous module to access this module.');
       }
-
     }
 
     const module = await this.moduleModel
