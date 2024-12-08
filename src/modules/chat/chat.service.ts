@@ -49,8 +49,6 @@ export class ChatService {
         { instructor_id: new Types.ObjectId(userId) },
       ],
     });
-    console.log(userId, courseId);
-    console.log(isStudentAssociated, isInstructorAssociated);
     if (isStudentAssociated || isInstructorAssociated) {
       return true;
     }
