@@ -44,16 +44,14 @@ export class ChatService {
 
     // Check if the user is associated as an instructor
     const isInstructorAssociated = await this.courseModel.exists({
-      $and: [{ _id: new Types.ObjectId(courseId) }, { instructor_id: userId }],
+      $and: [
+        { _id: new Types.ObjectId(courseId) },
+        { instructor_id: new Types.ObjectId(userId) },
+      ],
     });
-
-    // Debugging: Log the course details if association is found
+    console.log(userId, courseId);
+    console.log(isStudentAssociated, isInstructorAssociated);
     if (isStudentAssociated || isInstructorAssociated) {
-      const course = await this.courseModel.findOne({
-        _id: new Types.ObjectId(courseId),
-      });
-      console.log(course);
-
       return true;
     }
 
@@ -148,9 +146,25 @@ export class ChatService {
       );
     }
   }
-  async createRoom(userId: string, id: string, roomData: RoomDto) {
+  async checkMembers(members_list: string[], course_id: string) {
+    for (let i = 0; i < members_list.length; i++) {
+      if (!Types.ObjectId.isValid(members_list[i])) {
+        return false;
+      }
+      const member = await this.studentCourseModel.findOne({
+        user_id: new Types.ObjectId(members_list[i]),
+        course_id: new Types.ObjectId(course_id),
+      });
+      if (!member) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async createRoom(userId: string, course_id: string, roomData: RoomDto) {
     try {
-      const enrolled = await this.isAssociatedWithCourse(userId, id);
+      const enrolled = await this.isAssociatedWithCourse(userId, course_id);
       if (!enrolled) {
         throw new HttpException(
           'You are not associated with this course',
@@ -158,8 +172,15 @@ export class ChatService {
         );
       }
       const { title, description, members_list } = roomData;
+      const validMembers = await this.checkMembers(members_list, course_id);
+      if (!validMembers) {
+        throw new HttpException(
+          'One or more members are not associated with this course',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const room = new this.roomModel({
-        course_id: new Types.ObjectId(id),
+        course_id: new Types.ObjectId(course_id),
         creator_id: new Types.ObjectId(userId),
         members_list: members_list.map((member) => new Types.ObjectId(member)),
         title,
