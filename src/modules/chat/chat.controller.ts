@@ -22,6 +22,10 @@ import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { ThreadDto } from './dto/ThreadDto';
+import { RoomDto } from './dto/RoomDto';
+import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 @Controller('chat')
 @ApiTags('Chat')
 @UseGuards(JwtAuthGuard)
@@ -30,30 +34,16 @@ import { ThreadDto } from './dto/ThreadDto';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  // GET /chat/study-room/courses/:courseId - Get messages of a study room
-  @Get('study-room/courses/:id')
-  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
-  @ApiOperation({ summary: 'Get messages of a study room' })
-  @ApiResponse({ status: 200, description: 'Messages fetched successfully' })
-  @ApiResponse({ status: 404, description: 'Course Not Found' })
-  async getRoomMessages(
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
-    course: {
-      id: string;
-      modelName: string;
-    },
-  ) {
-    return this.chatService.getRoomMessages(course.id);
-  }
+  //---------------------------------- STUDY ROOMS ----------------------------------\\
 
-  // GET /chat/study-room/:courseId/messages/:messageId - Get a message in a study room
-  @Get('study-room/:courseId/messages/:messageId')
+  // Get study rooms of a course
+  @Get('study-room/courses/:courseId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
-  @ApiParam({ name: 'messageId', required: true, description: 'Message ID' })
-  @ApiOperation({ summary: 'Get a message in a study room' })
-  @ApiResponse({ status: 200, description: 'Message fetched successfully' })
-  @ApiResponse({ status: 404, description: 'Message not found' })
-  async getRoomMessage(
+  @ApiOperation({ summary: 'Get study rooms of a course' })
+  @ApiResponse({ status: 200, description: 'Study rooms fetched successfully' })
+  @ApiResponse({ status: 404, description: 'Course Not Found' })
+  async getCourseRooms(
+    @GetUser('userId') userId: string,
     @ExistParam(
       { idKey: 'courseId', modelName: 'Course' },
       CheckExistValidatorPipe,
@@ -62,39 +52,137 @@ export class ChatController {
       id: string;
       modelName: string;
     },
+  ) {
+    return this.chatService.getCourseRooms(userId, course.id);
+  }
+
+  // Get messages of a study room
+  @Get('study-room/courses/:courseId/rooms/:roomId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'roomId', required: true, description: 'Room ID' })
+  @ApiOperation({ summary: 'Get messages of a study room' })
+  @ApiResponse({ status: 200, description: 'Messages fetched successfully' })
+  @ApiResponse({ status: 404, description: 'Course Not Found' })
+  async getRoomMessages(
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'StudyRoom',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'roomId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    studyRoom: {
+      course_id: string;
+      _id: string;
+    },
+  ) {
+    return this.chatService.getRoomMessages(
+      userId,
+      studyRoom.course_id,
+      studyRoom._id,
+    );
+  }
+
+  // Get a message in a study room
+  @Get('study-room/courses/:courseId/rooms/:roomId/messages/:messageId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'roomId', required: true, description: 'Room ID' })
+  @ApiParam({ name: 'messageId', required: true, description: 'Message ID' })
+  @ApiOperation({ summary: 'Get a message in a study room' })
+  @ApiResponse({ status: 200, description: 'Message fetched successfully' })
+  @ApiResponse({ status: 404, description: 'Message not found' })
+  async getRoomMessage(
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'StudyRoom',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'roomId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    studyRoom: { course_id: string; _id: string },
+    @AssignedParam(
+      {
+        modelName: 'RoomMessage',
+        firstAttrName: 'room_id',
+        secondAttrName: '_id',
+        firstKey: 'roomId',
+        secondKey: 'messageId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    message: { _id: string },
+  ) {
+    return this.chatService.getRoomMessage(
+      userId,
+      studyRoom.course_id,
+      studyRoom._id,
+      message._id,
+    );
+  }
+
+  // Create a study room
+  @Post('study-room/courses/:courseId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiOperation({ summary: 'Create a study room' })
+  @ApiResponse({ status: 201, description: 'Room created successfully' })
+  @ApiResponse({ status: 404, description: 'Course Not Found' })
+  async createRoom(
+    @GetUser('userId') userId: string,
     @ExistParam(
-      { idKey: 'messageId', modelName: 'RoomMessage' },
+      { idKey: 'courseId', modelName: 'Course' },
       CheckExistValidatorPipe,
     )
-    message: {
+    course: {
       id: string;
       modelName: string;
     },
+    @Body() roomData: RoomDto,
   ) {
-    return this.chatService.getRoomMessage(course.id, message.id);
+    return this.chatService.createRoom(userId, course.id, roomData);
   }
 
-  // POST chat/study-room/courses/:id - Send message to a study room
-  @Post('study-room/courses/:id')
-  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  // Send message to a study room
+  @Post('study-room/courses/:courseId/rooms/:roomId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'roomId', required: true, description: 'Room ID' })
   @ApiOperation({ summary: 'Send message to a study room' })
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
   @ApiResponse({ status: 404, description: 'Course Not Found' })
   async sendMessage(
     @GetUser('userId') userId: string,
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
-    course: {
-      id: string;
-      modelName: string;
-    },
+    @AssignedParam(
+      {
+        modelName: 'StudyRoom',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'roomId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    studyRoom: { course_id: string; _id: string },
     @Body() messageData: MessageDto,
   ) {
-    return this.chatService.sendMessage(userId, course.id, messageData);
+    return this.chatService.sendMessage(
+      userId,
+      studyRoom.course_id,
+      studyRoom._id,
+      messageData,
+    );
   }
 
-  // POST chat/study-room/:courseId/messages/:messageId - Reply to a message in a study room
-  @Post('study-room/:courseId/messages/:messageId')
+  // Reply to a message in a study room
+  @Post('study-room/courses/:courseId/rooms/:roomId/messages/:messageId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'roomId', required: true, description: 'Room ID' })
   @ApiParam({ name: 'messageId', required: true, description: 'Message ID' })
   @ApiOperation({ summary: 'Reply to a message in a study room' })
   @ApiResponse({ status: 201, description: 'Reply sent successfully' })
@@ -102,35 +190,42 @@ export class ChatController {
   @ApiResponse({ status: 404, description: 'Message not found' })
   async replyToMessage(
     @GetUser('userId') userId: string,
-    @ExistParam(
-      { idKey: 'courseId', modelName: 'Course' },
-      CheckExistValidatorPipe,
+    @AssignedParam(
+      {
+        modelName: 'StudyRoom',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'roomId',
+      },
+      CheckAssignedValidatorPipe,
     )
-    course: {
-      id: string;
-      modelName: string;
-    },
-    @ExistParam(
-      { idKey: 'messageId', modelName: 'RoomMessage' },
-      CheckExistValidatorPipe,
+    studyRoom: { course_id: string; _id: string },
+    @AssignedParam(
+      {
+        modelName: 'RoomMessage',
+        firstAttrName: 'room_id',
+        secondAttrName: '_id',
+        firstKey: 'roomId',
+        secondKey: 'messageId',
+      },
+      CheckAssignedValidatorPipe,
     )
-    message: {
-      id: string;
-      modelName: string;
-    },
+    message: { _id: string },
     @Body() messageData: MessageDto,
   ) {
     return this.chatService.replyToMessage(
       userId,
-      course.id,
-      message.id,
+      studyRoom.course_id,
+      studyRoom._id,
+      message._id,
       messageData,
     );
   }
 
   //---------------------------------- FORUMS ----------------------------------\\
 
-  // GET /forums/courses/:courseId - Get threads of a course
+  // Get threads of a course
   @Get('forums/courses/:id/')
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   @ApiOperation({ summary: 'Get threads of a course' })
@@ -142,6 +237,7 @@ export class ChatController {
     description: 'Search for a thread by title',
   })
   async getCourseThreads(
+    @GetUser('userId') userId: string,
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
     course: {
       id: string;
@@ -149,9 +245,9 @@ export class ChatController {
     },
     @Query('title') title: string,
   ) {
-    return this.chatService.getCourseThreads(course.id, title);
+    return this.chatService.getCourseThreads(userId, course.id, title);
   }
-  // GET chat/forums/course:id/threads/thread:id - Get specific thread messages
+  // Get specific thread messages
   @Get('forums/courses/:courseId/threads/:threadId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
@@ -162,27 +258,30 @@ export class ChatController {
   })
   @ApiResponse({ status: 400, description: 'Invalid ID' })
   async getThreadMessages(
-    @ExistParam(
-      { idKey: 'courseId', modelName: 'Course' },
-      CheckExistValidatorPipe,
-    )
-    course: {
-      id: string;
-      modelName: string;
-    },
-    @ExistParam(
-      { idKey: 'threadId', modelName: 'Thread' },
-      CheckExistValidatorPipe,
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
     )
     thread: {
-      id: string;
-      modelName: string;
+      _id: string;
+      course_id: string;
     },
   ) {
-    return this.chatService.getThreadMessages(course.id, thread.id);
+    return this.chatService.getThreadMessages(
+      userId,
+      thread.course_id,
+      thread._id,
+    );
   }
 
-  // GET chat/forums/course:id/threads/thread:id/messages/message:id - Get message replies
+  // Get message replies
   @Get('forums/courses/:courseId/threads/:threadId/messages/:messageId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
@@ -194,39 +293,42 @@ export class ChatController {
   })
   @ApiResponse({ status: 400, description: 'Invalid ID' })
   async getThreadMessageReplies(
-    @ExistParam(
-      { idKey: 'courseId', modelName: 'Course' },
-      CheckExistValidatorPipe,
-    )
-    course: {
-      id: string;
-      modelName: string;
-    },
-    @ExistParam(
-      { idKey: 'threadId', modelName: 'Thread' },
-      CheckExistValidatorPipe,
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
     )
     thread: {
-      id: string;
-      modelName: string;
+      _id: string;
+      course_id: string;
     },
-    @ExistParam(
-      { idKey: 'messageId', modelName: 'ThreadMessage' },
-      CheckExistValidatorPipe,
+    @AssignedParam(
+      {
+        modelName: 'ThreadMessage',
+        firstAttrName: 'thread_id',
+        secondAttrName: '_id',
+        firstKey: 'threadId',
+        secondKey: 'messageId',
+      },
+      CheckAssignedValidatorPipe,
     )
-    message: {
-      id: string;
-      modelName: string;
-    },
+    message: { _id: string },
   ) {
     return this.chatService.getThreadMessageReplies(
-      course.id,
-      thread.id,
-      message.id,
+      userId,
+      thread.course_id,
+      thread._id,
+      message._id,
     );
   }
 
-  //POST chat/forums/courses/course:id - Post new thread
+  // Post new thread
   @Post('forums/courses/:id')
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
   @ApiOperation({ summary: 'Post a new thread' })
@@ -245,7 +347,7 @@ export class ChatController {
     return this.chatService.postThread(userId, course.id, threadData);
   }
 
-  //POST chat/forums/courses/course:id/threads/thread:id - Send a message in a thread
+  // Send a message in a thread
   @Post('forums/courses/:courseId/threads/:threadId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
@@ -255,33 +357,31 @@ export class ChatController {
   @ApiResponse({ status: 400, description: 'Invalid ID' })
   async sendMessageToThread(
     @GetUser('userId') userId: string,
-    @ExistParam(
-      { idKey: 'courseId', modelName: 'Course' },
-      CheckExistValidatorPipe,
-    )
-    course: {
-      id: string;
-      modelName: string;
-    },
-    @ExistParam(
-      { idKey: 'threadId', modelName: 'Thread' },
-      CheckExistValidatorPipe,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
     )
     thread: {
-      id: string;
-      modelName: string;
+      _id: string;
+      course_id: string;
     },
     @Body() threadMessageData: MessageDto,
   ) {
     return this.chatService.sendMessageToThread(
       userId,
-      course.id,
-      thread.id,
+      thread.course_id,
+      thread._id,
       threadMessageData,
     );
   }
 
-  //POST chat/forums/courses/course:id/threads/thread:id/messages/message:id - Reply to a Thread message
+  // Reply to a Thread message
   @Post('forums/courses/:courseId/threads/:threadId/messages/:messageId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
@@ -292,37 +392,38 @@ export class ChatController {
   @ApiResponse({ status: 400, description: 'Invalid ID' })
   async replyToThreadMessage(
     @GetUser('userId') userId: string,
-    @ExistParam(
-      { idKey: 'courseId', modelName: 'Course' },
-      CheckExistValidatorPipe,
-    )
-    course: {
-      id: string;
-      modelName: string;
-    },
-    @ExistParam(
-      { idKey: 'threadId', modelName: 'Thread' },
-      CheckExistValidatorPipe,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
     )
     thread: {
-      id: string;
-      modelName: string;
+      _id: string;
+      course_id: string;
     },
-    @ExistParam(
-      { idKey: 'messageId', modelName: 'ThreadMessage' },
-      CheckExistValidatorPipe,
+    @AssignedParam(
+      {
+        modelName: 'ThreadMessage',
+        firstAttrName: 'thread_id',
+        secondAttrName: '_id',
+        firstKey: 'threadId',
+        secondKey: 'messageId',
+      },
+      CheckAssignedValidatorPipe,
     )
-    message: {
-      id: string;
-      modelName: string;
-    },
+    message: { _id: string },
     @Body() threadMessageReplyData: MessageDto,
   ) {
     return this.chatService.replyToThreadMessage(
       userId,
-      course.id,
-      thread.id,
-      message.id,
+      thread.course_id,
+      thread._id,
+      message._id,
       threadMessageReplyData,
     );
   }

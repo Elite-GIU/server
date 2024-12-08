@@ -3,16 +3,35 @@ import { Content, ContentSchema } from './schemas/content.schema';
 import { Course, CourseSchema } from './schemas/course.schema';
 import { Log, LogSchema } from './schemas/log.schema';
 import { ModuleEntity, ModuleSchema } from './schemas/module.schema';
-import { Notification, NotificationSchema } from './schemas/notification.schema';
+import {
+  Notification,
+  NotificationSchema,
+} from './schemas/notification.schema';
 import { Question, QuestionSchema } from './schemas/question.schema';
-import { Questionbank, QuestionbankSchema } from './schemas/questionbank.schema';
-import { QuizResponse, QuizResponseSchema } from './schemas/quizResponse.schema';
+import {
+  Questionbank,
+  QuestionbankSchema,
+} from './schemas/questionbank.schema';
+import {
+  QuizResponse,
+  QuizResponseSchema,
+} from './schemas/quizResponse.schema';
 import { RoomMessage, RoomMessageSchema } from './schemas/roomMessage.schema';
-import { StudentCourse, StudentCourseSchema } from './schemas/studentCourse.schema';
+import {
+  StudentCourse,
+  StudentCourseSchema,
+} from './schemas/studentCourse.schema';
 import { Thread, ThreadSchema } from './schemas/thread.schema';
-import { ThreadMessage, ThreadMessageSchema } from './schemas/threadMessage.schema';
-import { ThreadMessageReply, ThreadMessageReplySchema } from './schemas/threadMessageReply.schema';
+import {
+  ThreadMessage,
+  ThreadMessageSchema,
+} from './schemas/threadMessage.schema';
+import {
+  ThreadMessageReply,
+  ThreadMessageReplySchema,
+} from './schemas/threadMessageReply.schema';
 import { User, UserSchema } from './schemas/user.schema';
+import { StudyRoom, StudyRoomSchema } from './schemas/studyRoom.schema';
 
 export const DatabaseModels = MongooseModule.forFeature([
   { name: Content.name, schema: ContentSchema },
@@ -29,4 +48,5 @@ export const DatabaseModels = MongooseModule.forFeature([
   { name: ThreadMessage.name, schema: ThreadMessageSchema },
   { name: ThreadMessageReply.name, schema: ThreadMessageReplySchema },
   { name: User.name, schema: UserSchema },
+  { name: StudyRoom.name, schema: StudyRoomSchema },
 ]);
