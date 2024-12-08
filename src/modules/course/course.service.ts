@@ -154,9 +154,7 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
   }
 
   async getStudentCourseWithModules(courseId: string) {
-    console.log('courseId', courseId);
     const course = await this.courseModel.findById(courseId);
-    console.log('course', course);
     const modules = await this.moduleModel
       .find({ course_id: course._id })
       .select('-content -resources')

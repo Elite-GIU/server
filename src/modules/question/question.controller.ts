@@ -118,7 +118,6 @@ export class QuestionController {
     @ExistParam({idKey: 'questionId', modelName: 'Question' }, CheckExistValidatorPipe) question: { id: string },
     @Body() updateQuestionDto: UpdateQuestionDto,
   ) {
-    console.log(question.id)
     return await this.questionService.updateQuestion(module._id, question.id , updateQuestionDto);
   }
 
