@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express';
 import { Model, Types } from 'mongoose';
 import { Course } from 'src/database/schemas/course.schema';
 import { ModuleEntity } from 'src/database/schemas/module.schema';
@@ -59,6 +61,52 @@ export class DashboardService {
     return courseDetails;
   }
 
+  async getInstructorDashboardReport(instructorId: string, res: Response) {
+    try {
+      const courses = await this.coursesModel.find({ instructor_id: new Types.ObjectId(instructorId) });
+      const courseDetails = await this.getCourseDetails(courses);
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Instructor Dashboard');
+
+      worksheet.addRow([
+        'Course ID',
+        'Course Name',
+        'Description',
+        'Student Count',
+        'Students Completed Course',
+        'Average Grade',
+        'Below Average Count',
+        'Average Count',
+        'Above Average Count',
+        'Excellent Count'
+      ]);
+
+      courseDetails.forEach((course) => {
+        worksheet.addRow([
+          course.courseId,
+          course.courseName,
+          course.description,
+          course.studentCount,
+          course.studentsCompletedCourse,
+          course.averageGrade,
+          course.performanceMetrics.belowAverage, 
+          course.performanceMetrics.average,
+          course.performanceMetrics.aboveAverage,
+          course.performanceMetrics.excellent,
+        ]);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      res.header('Content-Disposition', 'attachment; filename=InstructorReport.xlsx');
+      res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error) {
+      throw new Error('Error generating Excel file: ' + error.message);
+    }
+  }
+  
+
   async getInstructorCourseDashboard(courseId: string) {
     const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId) });
     const moduleDetails = await this.getModuleDetails(modules);
@@ -111,6 +159,7 @@ export class DashboardService {
       const studentCount = await this.studentCourseModel.countDocuments({ course_id: course._id });
       const studentCompletedCourse = await this.studentCourseModel.countDocuments({ course_id: course._id, completion_percentage: 100 });
       const segmentedStudents = await this.segmentStudentsPerCourse(course._id);
+      const averageGrade = await this.getCourseAverageGrade(course._id);
 
       courseDetails.push({
         courseId: course._id,
@@ -118,7 +167,8 @@ export class DashboardService {
         description: course.description, 
         studentCount: studentCount,
         studentsCompletedCourse: studentCompletedCourse,
-        performanceMetrics: segmentedStudents
+        averageGrade: averageGrade,
+        performanceMetrics: segmentedStudents,
       });
     }
   
@@ -171,6 +221,34 @@ export class DashboardService {
     }
   
     return moduleDetails;
+  }
+
+  async getCourseAverageGrade(courseId: string) {
+    try {
+      const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId) });
+
+      if (!modules || modules.length === 0) {
+        return 0;
+      }
+
+      const moduleIds = modules.map((module) => module._id);
+
+      const quizzes = await this.quizResponseModel.find({
+        module_id: { $in: moduleIds }
+      });
+
+      if (!quizzes || quizzes.length === 0) {
+        return 0;
+      }
+
+      const grades = quizzes.map((quiz) => quiz.score || 0);
+      const total = grades.reduce((sum, grade) => sum + grade, 0);
+      const average = total / grades.length;
+
+      return average;
+    } catch (error) {
+      throw new Error('Error calculating average grade: ' + error.message);
+    }
   }
 
 
