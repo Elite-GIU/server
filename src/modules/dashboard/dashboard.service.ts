@@ -253,21 +253,40 @@ export class DashboardService {
 
 
   public async calculateAverageGrade(userId: string, courseId: string) {
-    const quizzes = await this.getStudentQuizzesPerCourse(userId, courseId);
-    const grades = quizzes.map((quiz) => quiz.score || 0);
+    const highestQuizzes = await this.getHighestStudentQuizzesByCourse(userId, courseId);
+
+    const grades = highestQuizzes
+      .map((entry) => entry.highestQuiz?.score || 0);
+
     return this.calculateAverage(grades);
   }
 
-  private async getStudentQuizzesPerCourse(userId: string, courseId: string){
-    const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId) }, { _id: 1 });
-    const moduleIds = modules.map((module) => module._id);
-    const quizzes = await this.quizResponseModel.find({
-        user_id: new Types.ObjectId(userId),
-        module_id: { $in: moduleIds },
-    });
-    return quizzes;
+  private async getHighestStudentQuizzesByCourse(userId: string, courseId: string) {
+    const modules = await this.modulesModel.find(
+      { course_id: new Types.ObjectId(courseId) },
+      { _id: 1 }
+    );
+  
+    const highestScores = await Promise.all(
+      modules.map(async (module) => {
+        const topQuizResponse = await this.quizResponseModel
+          .find({
+            user_id: new Types.ObjectId(userId),
+            module_id: module._id,
+          })
+          .sort({ score: -1 }) 
+          .limit(1); 
+  
+        return {
+          moduleId: module._id,
+          highestQuiz: topQuizResponse[0] || null, 
+        };
+      })
+    );
+  
+    return highestScores;
   }
-
+  
   private calculateAverage(grades: number[]) {
     if (grades.length === 0) return 0;
     return grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
