@@ -8,6 +8,7 @@ import { CreateModuleDto } from './dto/CreateModuleDto';
 import { Content } from '../../database/schemas/content.schema';
 import * as path from 'path';
 import * as fs from 'fs';
+import { UpdateContentDto } from './dto/UpdateContentDto';
 
 @Injectable()
 export class ModuleService {
@@ -157,6 +158,57 @@ export class ModuleService {
         fs.unlinkSync(file.path);
       }
       throw new BadRequestException(`Failed to upload content: ${error.message}`);
+    }
+  }
+
+  async updateContent(moduleId: string, contentId: string, updateContentDto: UpdateContentDto, file?: Express.Multer.File) {
+
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const contentIdObject = new Types.ObjectId(contentId);
+    
+  
+    const existingContent = await this.contentModel.findById(contentIdObject);
+  
+    if (!existingContent) {
+      throw new NotFoundException('Content not found');
+    }
+
+    if (file) {
+      const filePath = path.join('uploads', file.filename);
+      fs.renameSync(file.path, filePath);
+
+      const existingContentTitle = await this.contentModel.findOne({
+        title: updateContentDto.title,
+      });
+      if (existingContentTitle) {
+        fs.unlinkSync(filePath);
+        throw new BadRequestException('Content with the same title already exists.');
+      }
+
+      const content = await this.contentModel.create({
+        title: updateContentDto.title || existingContent.title,
+        description: updateContentDto.description || existingContent.description,
+        type: updateContentDto.type || existingContent.type,
+        isVisible: true,
+        content: filePath,
+      });
+
+      existingContent.isVisible = false;
+      await existingContent.save();
+
+      await this.moduleModel.findByIdAndUpdate(
+        moduleIdObject,
+        {
+          $push: { content: content._id },
+        },
+        { new: true, runValidators: true }
+      );
+
+      return content;
+    } else {
+      Object.assign(existingContent, updateContentDto)
+      await existingContent.save();
+      return existingContent;
     }
   }
 }
