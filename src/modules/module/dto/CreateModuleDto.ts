@@ -28,4 +28,14 @@ export class CreateModuleDto {
   @IsNotEmpty()
   @IsEnum(['mcq', 'true_false', 'mix'])
   assessmentType: string;
+
+  @ApiProperty({
+    description: 'Minimum grade required to pass the quiz in this module',
+    example: '60',
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  passingGrade: number;
 }

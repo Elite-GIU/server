@@ -121,7 +121,7 @@ export class ModuleService {
   // Function to create a new module for a course
   async createModule(courseId: string, createModuleDto: CreateModuleDto) {
     const courseIdObject = new Types.ObjectId(courseId);
-    const { title, nrOfQuestions, assessmentType } = createModuleDto;
+    const { title, nrOfQuestions, assessmentType, passingGrade } = createModuleDto;
     
     // Check if a module with the same title already exists
     const existingModule = await this.moduleModel.findOne({
@@ -139,6 +139,7 @@ export class ModuleService {
       numberOfQuestions: nrOfQuestions,
       assessmentType,
       content: [],
+      passingGrade,
     });
     await newModule.save();
 
