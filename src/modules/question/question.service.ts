@@ -34,7 +34,7 @@ export class QuestionService {
   // Function to Create a new question in the module's question bank
   async createQuestion(moduleId: string, createQuestionDto: CreateQuestionDto) {
     // Get the Question from the DTO
-    const { question, choices, type } = createQuestionDto;
+    const { question, choices, right_choice, type } = createQuestionDto;
 
     // Convert the moduleId to an ObjectId
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -59,6 +59,9 @@ export class QuestionService {
       throw new BadRequestException('True/False questions should have 2 choices.');
     }
 
+    if(!choices.includes(right_choice)) {
+      throw new BadRequestException('The right choice must be one of the provided choices.');
+    }
 
     // Create the question
     const newQuestion = await this.questionModel.create(createQuestionDto);
@@ -74,6 +77,9 @@ export class QuestionService {
 
     return {
       question,
+      choices,
+      right_choice,
+      type,
     };
   }
 
@@ -82,6 +88,20 @@ export class QuestionService {
     // Convert moduleId and questionId to ObjectId instances
     const moduleIdObject = new Types.ObjectId(moduleId);
     const questionIdObject = new Types.ObjectId(questionId);
+
+    const { choices, right_choice, type } = updateQuestionDto;
+
+    if(type === 'mcq' && choices.length !== 4) {
+      throw new BadRequestException('MCQ questions should have 4 choices.');
+    }
+
+    if(type === 'true_false' && choices.length !== 2) {
+      throw new BadRequestException('True/False questions should have 2 choices.');
+    }
+
+    if(!choices.includes(right_choice)) {
+      throw new BadRequestException('The right choice must be one of the provided choices.');
+    }
   
     // Check if the question exists in the question bank of the given module
     const questionbank = await this.questionbankModel.findOne({
