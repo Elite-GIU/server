@@ -24,6 +24,9 @@ export class ModuleEntity extends Document {
   @Prop({ required: true })
   numberOfQuestions: Number;
 
+  @Prop({ required: true })
+  passingGrade: Number;
+
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(ModuleEntity);
