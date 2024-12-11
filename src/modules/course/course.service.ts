@@ -122,14 +122,12 @@ export class CourseService {
 
 async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: string) : Promise<Course> {
 
-    const {category, description, difficulty_level, title, keywords} = createCourseDto;
-
     const duplicated = await this.courseModel.find({instructor_id: new Types.ObjectId(instructor_id), title: createCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), category, description, difficulty_level, title, keywords});
+    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), ...createCourseDto});
 
     return newCourse;
     
