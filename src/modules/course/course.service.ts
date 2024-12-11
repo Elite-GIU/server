@@ -8,6 +8,7 @@ import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { Type } from 'class-transformer';
 import { ModuleEntity } from '../../database/schemas/module.schema';
+import { AddRatingDto } from './dto/AddRatingDto';
 
 @Injectable()
 export class CourseService {
@@ -181,15 +182,40 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     return studentCourses.map(studentCourse => studentCourse.course_id);
   }
 
-  async rateCourse(courseId: string, rating: number) {
-    const ratingIndex = rating - 1;
-    const updatedCourse = await this.courseModel.findByIdAndUpdate(
-      courseId,
-      {
-        $inc: { [`ratings.${ratingIndex}`]: 1 },
-      },
-      { new: true }, 
-    );
-    return updatedCourse;
+  async rateCourse(courseId: string, ratingDto: AddRatingDto) {
+    const { course_rate, instructor_rate } = ratingDto;
+
+    let updatedCourse = null;
+    if (course_rate) {
+      const courseRatingIndex = course_rate - 1;
+      updatedCourse = await this.courseModel.findByIdAndUpdate(
+        courseId,
+        {
+          $inc: { [`ratings.${courseRatingIndex}`]: 1 },
+        },
+        { new: true }, 
+      );
+    }
+  
+    let updatedInstructor = null;
+    if (instructor_rate) {
+      const course = await this.courseModel.findById(courseId);
+      const instructorId = course.instructor_id;
+  
+      const instructorRatingIndex = instructor_rate - 1; 
+      updatedInstructor = await this.userModel.findByIdAndUpdate(
+        instructorId,
+        {
+          $inc: { [`ratings.${instructorRatingIndex}`]: 1 },
+        },
+        { new: true }, 
+      );
+    }
+
+    return {
+      updatedCourse,
+      updatedInstructor,
+    };
   }
+  
 }

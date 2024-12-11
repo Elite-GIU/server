@@ -23,7 +23,7 @@ import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
-import { RateCourseDto } from './dto/RateCourseDto';
+import { AddRatingDto } from './dto/AddRatingDto';
 
 @ApiTags('Courses')
 @Controller()
@@ -201,7 +201,7 @@ export class CourseController {
   @ApiOperation({ summary: 'Rate a course' })
   @ApiResponse({ status: 200, description: 'Course rated successfully' })
   async rateCourse(
-    @Body() rateCourseDto: RateCourseDto,
+    @Body() ratingDto: AddRatingDto,
     @AssignedParam({
       modelName: 'StudentCourse', 
       firstAttrName: 'user_id', 
@@ -210,6 +210,6 @@ export class CourseController {
       secondKey: 'id',
     }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
   ) {
-    return await this.courseService.rateCourse(course_id, rateCourseDto.rate);
+    return await this.courseService.rateCourse(course_id, ratingDto);
   }
 }
