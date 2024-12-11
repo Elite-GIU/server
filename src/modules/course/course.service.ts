@@ -8,13 +8,15 @@ import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { Type } from 'class-transformer';
 import { ModuleEntity } from '../../database/schemas/module.schema';
+import { CourseArchive } from 'src/database/schemas/course.archive.schema';
 
 @Injectable()
 export class CourseService {
   constructor(
       @InjectModel(Course.name) private readonly courseModel: Model<Course>,
+      @InjectModel(CourseArchive.name) private readonly courseArchiveModel: Model<CourseArchive>,
       @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
-    @InjectModel(User.name) private readonly userModel: Model<User>,
+      @InjectModel(User.name) private readonly userModel: Model<User>,
       @InjectModel(ModuleEntity.name) private readonly moduleModel: Model<ModuleEntity>,
   ) {}
   /**
@@ -120,14 +122,14 @@ export class CourseService {
 
 async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: string) : Promise<Course> {
 
-    const {category, description, difficulty_level, title} = createCourseDto;
+    const {category, description, difficulty_level, title, keywords} = createCourseDto;
 
     const duplicated = await this.courseModel.find({instructor_id: new Types.ObjectId(instructor_id), title: createCourseDto.title});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
 
-    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), category, description, difficulty_level, title});
+    const newCourse = await this.courseModel.create({instructor_id: new Types.ObjectId(instructor_id), category, description, difficulty_level, title, keywords});
 
     return newCourse;
     
@@ -179,5 +181,27 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     }
 
     return studentCourses.map(studentCourse => studentCourse.course_id);
+  }
+
+  async deleteInstructorCourse(id: string, userId: string){
+
+    const course = await this.courseModel.findById(id);
+
+    if(!course)
+      throw new Error('Course not found');
+
+    //archive the course
+
+    const newCourse = course.toObject();
+
+    console.log(newCourse)
+
+    delete newCourse._id;
+
+    await this.courseArchiveModel.create({...newCourse, instructor_id: userId});
+
+    const deleted = await this.courseModel.findByIdAndDelete(id);
+
+    return deleted;
   }
 }

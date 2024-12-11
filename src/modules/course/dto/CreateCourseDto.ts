@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsNotEmpty, Min, Max, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, Min, Max, IsOptional, IsArray } from 'class-validator';
 
 export class CreateCourseDto {
 
@@ -24,4 +24,9 @@ export class CreateCourseDto {
     @IsNotEmpty({ message: 'Title must not be empty' })
     @IsString({ message: 'Title must be a string' })
     title: string;
+
+    @ApiProperty()
+    @IsNotEmpty({ message: 'keywords must not be empty' })
+    @IsArray({ message: 'keywords must be an array of string' })
+    keywords: Array<string>;
 }
