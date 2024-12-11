@@ -28,5 +28,5 @@ export class UpdateCourseDto {
   @ApiProperty()
   @IsOptional()
   @IsArray({ message: 'keywords must be an array of string' })
-  keywords: Array<string>;
+  keywords?: Array<string>;
 }

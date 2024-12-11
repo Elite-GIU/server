@@ -199,7 +199,13 @@ export class CourseController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a course under the logged in instructor' })
   @ApiParam({ name: 'id', required: true, description: 'Course ID' })
-  async deleteInstructorCourse(@Param('id') id : string, @GetUser('userId') userId: string){
+  async deleteInstructorCourse(@Param('id') id : string, @GetUser('userId') userId: string, @AssignedParam({
+    modelName: 'Course', 
+    firstAttrName: 'instructor_id', 
+    secondAttrName: '_id', 
+    firstKey: 'userId', 
+    secondKey: 'id',
+  }, CheckAssignedValidatorPipe) course : {instructor_id: string, _id: string}){
       
       return await this.courseService.deleteInstructorCourse(id, userId);   
 

@@ -27,5 +27,5 @@ export class CreateCourseDto {
 
     @ApiProperty()
     @IsArray({ message: 'keywords must be an array of string' })
-    keywords: Array<string>;
+    keywords?: Array<string>;
 }

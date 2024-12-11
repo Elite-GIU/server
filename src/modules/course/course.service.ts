@@ -189,10 +189,10 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
       throw new Error('Course not found');
 
     //archive the course
+    if(!course.instructor_id.equals(userId))
+      throw new Error('Unauthorized');
 
     const newCourse = course.toObject();
-
-    console.log(newCourse)
 
     delete newCourse._id;
 
