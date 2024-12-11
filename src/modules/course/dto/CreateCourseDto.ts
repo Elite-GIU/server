@@ -26,7 +26,6 @@ export class CreateCourseDto {
     title: string;
 
     @ApiProperty()
-    @IsNotEmpty({ message: 'keywords must not be empty' })
     @IsArray({ message: 'keywords must be an array of string' })
     keywords: Array<string>;
 }
