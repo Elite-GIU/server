@@ -11,6 +11,7 @@ import { UploadContentDto } from './dto/UploadContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { RateModuleDto } from './dto/RateModuleDto';
 
 @ApiTags('Modules')
 @Controller()
@@ -188,6 +189,36 @@ export class ModuleController {
       throw new BadRequestException('File is required');
     }
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
+  }
+
+  @Post('student/courses/:courseId/modules/:moduleId/rate')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'moduleId', description: 'Module ID' })
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Rate a module' })
+  @ApiResponse({ status: 200, description: 'Module rated successfully' })
+  async rateCourse(
+    @Body() rateModuleDto: RateModuleDto,
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
+    @AssignedParam({
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'courseId',
+    }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
+  ) {
+    return await this.moduleService.rateModule(module._id, rateModuleDto.rate);
   }
 
  

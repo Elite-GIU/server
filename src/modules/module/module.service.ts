@@ -201,4 +201,16 @@ export class ModuleService {
       throw new BadRequestException(`Failed to upload content: ${error.message}`);
     }
   }
+
+  async rateModule(moduleId: string, rating: number) {
+    const ratingIndex = rating - 1;
+    const updatedModule = await this.moduleModel.findByIdAndUpdate(
+      moduleId,
+      {
+        $inc: { [`ratings.${ratingIndex}`]: 1 },
+      },
+      { new: true }, 
+    );
+    return updatedModule;
+  }
 }
