@@ -516,9 +516,6 @@ export class ChatService {
     const thread = await this.threadModel.findOne({
       _id: new Types.ObjectId(_id),
     });
-    if (!thread) {
-      throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
-    }
     if (thread.creator_id.toString() !== userId) {
       return false;
     }
@@ -550,9 +547,6 @@ export class ChatService {
       const thread = await this.threadModel.findOne({
         _id: new Types.ObjectId(_id),
       });
-      if (!thread) {
-        throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
-      }
       if (title) thread.title = title;
       if (description) thread.description = description;
       await thread.save();
@@ -587,7 +581,6 @@ export class ChatService {
         );
       }
       const isCreator = await this.isCreator(userId, _id);
-      console.log(role);
       if (!isCreator && role !== 'instructor') {
         throw new HttpException(
           'You are not the creator of this thread',
@@ -598,9 +591,6 @@ export class ChatService {
       const thread = await this.threadModel.findOne({
         _id: new Types.ObjectId(_id),
       });
-      if (!thread) {
-        throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
-      }
       await thread.deleteOne({ _id: new Types.ObjectId(_id) });
       return {
         statusCode: HttpStatus.OK,
