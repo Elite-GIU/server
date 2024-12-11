@@ -180,4 +180,16 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
 
     return studentCourses.map(studentCourse => studentCourse.course_id);
   }
+
+  async rateCourse(courseId: string, rating: number) {
+    const ratingIndex = rating - 1;
+    const updatedCourse = await this.courseModel.findByIdAndUpdate(
+      courseId,
+      {
+        $inc: { [`ratings.${ratingIndex}`]: 1 },
+      },
+      { new: true }, 
+    );
+    return updatedCourse;
+  }
 }
