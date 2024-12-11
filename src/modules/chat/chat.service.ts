@@ -12,6 +12,7 @@ import { Thread } from 'src/database/schemas/thread.schema';
 import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 import { RoomDto } from './dto/RoomDto';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
+import { ThreadEditDto } from './dto/ThreadEditDto';
 
 @Injectable()
 export class ChatService {
@@ -499,6 +500,110 @@ export class ChatService {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
         data: reply,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async isCreator(userId: string, _id: string) {
+    const thread = await this.threadModel.findOne({
+      _id: new Types.ObjectId(_id),
+    });
+    if (!thread) {
+      throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
+    }
+    if (thread.creator_id.toString() !== userId) {
+      return false;
+    }
+    return true;
+  }
+
+  async editThread(
+    userId: string,
+    course_id: string,
+    _id: string,
+    threadData: ThreadEditDto,
+  ) {
+    try {
+      const enrolled = await this.isAssociatedWithCourse(userId, course_id);
+      if (!enrolled) {
+        throw new HttpException(
+          'You are not associated with this course',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const isCreator = await this.isCreator(userId, _id);
+      if (!isCreator) {
+        throw new HttpException(
+          'You are not the creator of this thread',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const { title, description } = threadData;
+      const thread = await this.threadModel.findOne({
+        _id: new Types.ObjectId(_id),
+      });
+      if (!thread) {
+        throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
+      }
+      if (title) thread.title = title;
+      if (description) thread.description = description;
+      await thread.save();
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Thread updated successfully',
+        data: thread,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async deleteThread(
+    userId: string,
+    role: string,
+    course_id: string,
+    _id: string,
+  ) {
+    try {
+      const enrolled = await this.isAssociatedWithCourse(userId, course_id);
+      if (!enrolled) {
+        throw new HttpException(
+          'You are not associated with this course',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const isCreator = await this.isCreator(userId, _id);
+      if (!isCreator && role !== 'admin') {
+        throw new HttpException(
+          'You are not the creator of this thread',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      const thread = await this.threadModel.findOne({
+        _id: new Types.ObjectId(_id),
+      });
+      if (!thread) {
+        throw new HttpException('Thread not found', HttpStatus.NOT_FOUND);
+      }
+      await thread.deleteOne({ _id: new Types.ObjectId(_id) });
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Thread deleted successfully',
       };
     } catch (error) {
       if (error instanceof HttpException) {
