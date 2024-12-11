@@ -19,7 +19,7 @@ export class Course extends Document {
   difficulty_level: number;
 
   @Prop({ required: false})
-  keywords: Array<string>
+  keywords?: Array<string>
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
