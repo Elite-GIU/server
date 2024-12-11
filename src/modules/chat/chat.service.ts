@@ -587,7 +587,8 @@ export class ChatService {
         );
       }
       const isCreator = await this.isCreator(userId, _id);
-      if (!isCreator && role !== 'admin') {
+      console.log(role);
+      if (!isCreator && role !== 'instructor') {
         throw new HttpException(
           'You are not the creator of this thread',
           HttpStatus.UNAUTHORIZED,
