@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 import { plainToInstance } from 'class-transformer';
+import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 
 @Injectable()
 export class ModuleService {
@@ -223,4 +224,52 @@ export class ModuleService {
       throw new BadRequestException(`Failed to upload content: ${error.message}`);
     }
   }
+  async updateModule(
+    courseId: string,
+    moduleId: string,
+    updateData: {
+      assessmentType?: string;
+      numberOfQuestions?: number;
+      passingGrade?: number;
+    },
+    userId: string,
+  ) {
+    const courseIdObject = new Types.ObjectId(courseId);
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const studentIdObject = new Types.ObjectId(userId);
+  
+    // Retrieve all modules in the course and validate the moduleId
+    const modules = await this.moduleModel.find({ course_id: courseIdObject }).sort({ created_at: 1 });
+    const currentModuleIndex = modules.findIndex(module => module._id.toString() === moduleIdObject.toString());
+  
+    if (currentModuleIndex === -1) {
+      throw new NotFoundException(`Module with ID ${moduleId} not found in course with ID ${courseId}.`);
+    }
+  
+    // Check if any quizzes have been taken for this module
+    const quizResponses = await this.quizResponseModel.find({ module_id: moduleIdObject });
+  
+    if (quizResponses.length > 0) {
+      throw new ForbiddenException('Cannot update the module as quizzes have already been taken.');
+    }
+  
+    // Update the module
+    const updatedModule = await this.moduleModel.findByIdAndUpdate(
+      moduleIdObject,
+      {
+        ...(updateData.assessmentType && { assessmentType: updateData.assessmentType }),
+        ...(updateData.numberOfQuestions && { numberOfQuestions: updateData.numberOfQuestions }),
+        ...(updateData.passingGrade && { passingGrade: updateData.passingGrade }),
+      },
+      { new: true },
+    );
+  
+    if (!updatedModule) {
+      throw new NotFoundException('Failed to update the module. Please try again.');
+    }
+  
+    return updatedModule;
+  }
+  
+  
 }

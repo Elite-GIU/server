@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body, UseGuards, UploadedFile, UseInterceptors, BadRequestException, ParseFilePipe, FileTypeValidator, MaxFileSizeValidator ,Query} from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Request,Param, Body, UseGuards, UploadedFile, UseInterceptors, BadRequestException, ParseFilePipe, FileTypeValidator, MaxFileSizeValidator ,Query} from '@nestjs/common';
 import { ModuleService } from './module.service';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
@@ -11,6 +11,7 @@ import { UploadContentDto } from './dto/UploadContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 
 @ApiTags('Modules')
 @Controller()
@@ -188,6 +189,24 @@ export class ModuleController {
       throw new BadRequestException('File is required');
     }
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
+  }
+  @Put(':courseId/:moduleId/UpdateAssesment')
+  @UseGuards(JwtAuthGuard, InstructorGuard) // added after the test
+  @ApiOperation({ summary: 'Update a specific module within a course' })
+  @ApiParam({ name: 'courseId', description: 'ID of the course containing the module' })
+  @ApiParam({ name: 'moduleId', description: 'ID of the module to update' })
+  @ApiResponse({ status: 200, description: 'Module updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request: Invalid input data' })
+  @ApiResponse({ status: 403, description: 'Forbidden: Cannot update module as quizzes have already been taken' })
+  @ApiResponse({ status: 404, description: 'Not Found: Module not found in the course' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error' })
+  async updateModule(
+    @Param('courseId') courseId: string,
+    @Param('moduleId') moduleId: string,
+    @Body() updateData: UpdateModuleAssessmentDto,
+    @GetUser('userId') userId: string
+  ) {
+    return this.moduleService.updateModule(courseId, moduleId, updateData, userId);
   }
 
  
