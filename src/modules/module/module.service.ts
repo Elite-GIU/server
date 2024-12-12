@@ -5,10 +5,12 @@ import { ModuleEntity } from '../../database/schemas/module.schema';
 import { Questionbank } from '../../database/schemas/questionbank.schema';
 import { Question } from '../../database/schemas/question.schema';
 import { CreateModuleDto } from './dto/CreateModuleDto';
+import { GetModuleDto } from './dto/GetModuleDto';
 import { Content } from '../../database/schemas/content.schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class ModuleService {
@@ -46,24 +48,34 @@ export class ModuleService {
       throw new NotFoundException(`No modules found for course with ID ${courseId}`);
     }
   
-    // Sort the nested `content` array within each module
-    const sortedModules = modules.map(module => {
+     // Sort the nested `content` array within each module
+    const sortedModules = modules.map((module) => {
       if (module.content && Array.isArray(module.content)) {
+        // Sorting the content array based on 'last_updated' property
         module.content.sort((a: any, b: any) => {
           const order = sortOrder === 'asc' ? 1 : -1;
-          return (new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime()) * order;
+          return (
+            (new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime()) * order
+          );
         });
       }
       return module;
     });
-  
-    return {
-      sortedModules,
-    };
+
+    // Map the sorted modules to the CreateModuleDto structure
+    return plainToInstance(
+      CreateModuleDto,
+      sortedModules.map((module) => ({
+        title: module.title,
+        nrOfQuestions: module.numberOfQuestions,
+        assessmentType: module.assessmentType,
+        passingGrade: module.passingGrade,
+      })),
+    );
   }
  
   // Function to get a specific module by its ID
-  async getModuleById(courseId: string, moduleId: string) {
+  async getModuleById(courseId: string, moduleId: string) { // this is specific for the instructor  
     // Convert courseId and moduleId to ObjectId
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -79,7 +91,7 @@ export class ModuleService {
     };
   }
 
-  async getStudentModuleById(courseId: string, moduleId: string, userId: string){
+  async getStudentModuleById(courseId: string, moduleId: string, userId: string){ // this is specific for the student 
 
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -113,9 +125,19 @@ export class ModuleService {
       .populate('content')
       .exec();
 
-    return {
-      module,
-    };
+      if (!module) {
+        throw new Error('Module not found.');
+      }
+    
+      // Filter the content to include only visible items
+      const filteredContent = (module.content || []).filter(
+        (contentItem: any) => contentItem.isVisible === true,
+      );
+    
+      return {
+        ...module.toObject(),
+        content: filteredContent,
+      };
   }
 
   // Function to create a new module for a course
