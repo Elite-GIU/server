@@ -51,6 +51,18 @@ export class User extends Document {
 
   @Prop()
   biometricHash?: string;
+
+  @Prop({
+    type: [Number],
+    default: function (this: User) {
+      return this.role === 'instructor' ? [0, 0, 0, 0, 0] : undefined;
+    },
+    required: function (this: User) {
+      return this.role === 'instructor';
+    },
+  })
+  ratings: number[];
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

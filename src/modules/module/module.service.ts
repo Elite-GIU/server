@@ -312,4 +312,16 @@ export class ModuleService {
     );
     return updatedModule;
   }
+
+  async rateModule(moduleId: string, rating: number) {
+    const ratingIndex = rating - 1;
+    const updatedModule = await this.moduleModel.findByIdAndUpdate(
+      moduleId,
+      {
+        $inc: { [`ratings.${ratingIndex}`]: 1 },
+      },
+      { new: true }, 
+    );
+    return updatedModule;
+  }
 }

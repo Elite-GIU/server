@@ -27,6 +27,8 @@ export class ModuleEntity extends Document {
   @Prop({ required: true })
   passingGrade: Number;
 
+  @Prop({ type: [Number], default: [0, 0, 0, 0, 0], required: true })
+  ratings: number[];
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(ModuleEntity);
