@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, Max, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateCourseDto {
@@ -24,4 +24,9 @@ export class UpdateCourseDto {
   @IsOptional()
   @IsString()
   title?: string
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray({ message: 'keywords must be an array of string' })
+  keywords?: Array<string>;
 }
