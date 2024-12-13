@@ -9,6 +9,7 @@ enum ContentType {
   Assignment = 'assignment',
   Tutorial = 'tutorial',
   Slides = 'slides',
+  Empty = '',
 }
 export class UpdateContentDto {
   @ApiPropertyOptional({
@@ -31,8 +32,8 @@ export class UpdateContentDto {
   })
   @IsOptional()
   @IsEnum(ContentType)
-  type?: ContentType | null;
-  
+  type?: ContentType;
+
   @ApiPropertyOptional({
     description: 'The file being updated',
     type: 'string',
