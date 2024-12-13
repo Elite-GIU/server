@@ -12,6 +12,7 @@ import {
   ModuleEntity,
   ModuleSchema,
 } from '../../database/schemas/module.schema';
+import { Content, ContentSchema } from '../../database/schemas/content.schema';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: User.name, schema: UserSchema },
       { name: StudentCourse.name, schema: StudentCourseSchema },
       { name: ModuleEntity.name, schema: ModuleSchema },
+      { name: Content.name, schema: ContentSchema },
     ]),
     AuthModule,
   ],
