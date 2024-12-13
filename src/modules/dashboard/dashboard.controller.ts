@@ -1,9 +1,10 @@
-import { Controller, Get, Param, Query, UseGuards, UsePipes } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, UseGuards, UsePipes } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { Response } from 'express';
 import {
     ApiTags,
     ApiOperation,
@@ -45,6 +46,19 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Dashboard returned successfully' })
   async getInstructorDashboard(@GetUser('userId') instructorId: string) {
     return this.dashboardService.getInstructorDashboard(instructorId);
+  }
+
+  @UseGuards(JwtAuthGuard, InstructorGuard)
+  @Get('instructor/download')
+  @ApiOperation({ summary: 'Get the instructor dashboard' })
+  @ApiResponse({ status: 200, description: 'Dashboard returned successfully' })
+  async getInstructorDashboardReport(@GetUser('userId') instructorId: string, @Res() res: Response) {
+    try {
+      // Generate and send the Excel file
+      await this.dashboardService.getInstructorDashboardReport(instructorId, res);
+    } catch (error) {
+      res.status(500).send('Failed to generate the file');
+    }
   }
 
   @UseGuards(JwtAuthGuard, InstructorGuard)

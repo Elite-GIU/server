@@ -78,6 +78,8 @@ export class QuizService {
 
     const submittedQuestions = await this.questionModel.find({ _id: { $in: questionsIdObjectArray } }).exec();
 
+    const module_id = new Types.ObjectId(moduleId);
+    const module = await this.moduleModel.findById(module_id);
     const score = this.calculateQuizScore(submittedQuestions, submitQuizDto);
 
     await this.handleCompletionPercentage(studentId, moduleId, courseId, score);
@@ -87,7 +89,7 @@ export class QuizService {
       {
         answers: submitQuizDto.answers,
         score,
-        finalGrade: score >= 50 ? 'passed' : 'failed'
+        finalGrade: score >= module.passingGrade ? 'passed' : 'failed'
       },
       { new: true }
     )
@@ -121,7 +123,7 @@ export class QuizService {
     });
 
     const module = await this.moduleModel.findById(quizResponse.module_id).exec();
-    const message = quizResponse.score >= 50 ? 
+    const message = quizResponse.score >= module.passingGrade ? 
         'You passed the quiz, well done!' : 
         `You failed the quiz, please study the ${module.title} module again`;
 

@@ -34,7 +34,7 @@ export class QuestionService {
   // Function to Create a new question in the module's question bank
   async createQuestion(moduleId: string, createQuestionDto: CreateQuestionDto) {
     // Get the Question from the DTO
-    const { question } = createQuestionDto;
+    const { question, choices, type } = createQuestionDto;
 
     // Convert the moduleId to an ObjectId
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -50,6 +50,15 @@ export class QuestionService {
     if (questionExists) {
       throw new BadRequestException('Question already exists.');
     }
+
+    if(type === 'mcq' && choices.length !== 4) {
+      throw new BadRequestException('MCQ questions should have 4 choices.');
+    }
+
+    if(type === 'true_false' && choices.length !== 2) {
+      throw new BadRequestException('True/False questions should have 2 choices.');
+    }
+
 
     // Create the question
     const newQuestion = await this.questionModel.create(createQuestionDto);

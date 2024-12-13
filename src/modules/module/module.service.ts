@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ModuleEntity } from '../../database/schemas/module.schema';
@@ -9,6 +9,7 @@ import { Content } from '../../database/schemas/content.schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UpdateContentDto } from './dto/UpdateContentDto';
+import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 
 @Injectable()
 export class ModuleService {
@@ -17,6 +18,7 @@ export class ModuleService {
     @InjectModel(Questionbank.name) private readonly questionbankModel: Model<Questionbank>,
     @InjectModel(Content.name) private readonly contentModel: Model<Content>,
     @InjectModel(Question.name) private readonly questionModel: Model<Question>,
+    @InjectModel(QuizResponse.name) private readonly quizResponseModel: Model<QuizResponse>,
   ) {}
 
   // Function to get all modules for a course with a given courseId
@@ -66,8 +68,47 @@ export class ModuleService {
     // Convert courseId and moduleId to ObjectId
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
-    
+
     // Fetch the module with the given ID and populate the `content` field
+    const module = await this.moduleModel
+      .findOne({ _id: moduleIdObject, course_id: courseIdObject })
+      .populate('content')
+      .exec();
+
+    return {
+      module,
+    };
+  }
+
+  async getStudentModuleById(courseId: string, moduleId: string, userId: string){
+
+    const courseIdObject = new Types.ObjectId(courseId);
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const studentIdObject = new Types.ObjectId(userId);
+
+    const modules = await this.moduleModel.find({ course_id: courseIdObject }).sort({ created_at: 1 });
+    const currentModuleIndex = modules.findIndex(module => module._id.toString() === moduleIdObject.toString());
+
+    if (currentModuleIndex === -1) {
+      throw new Error('Module not found.');
+    }
+
+    if (currentModuleIndex!==0){
+      const previousModule = modules[currentModuleIndex - 1];
+      if (!previousModule) {
+        throw new Error('No previous module found.');
+      }
+    
+      const quizResponse = await this.quizResponseModel.find({
+        user_id: studentIdObject,
+        module_id: previousModule._id,
+      }).sort({ score: -1 });
+
+      if (!quizResponse.length || quizResponse[0].finalGrade === 'failed') {
+        throw new ForbiddenException('You must pass the previous module to access this module.');
+      }
+    }
+
     const module = await this.moduleModel
       .findOne({ _id: moduleIdObject, course_id: courseIdObject })
       .populate('content')
@@ -81,7 +122,7 @@ export class ModuleService {
   // Function to create a new module for a course
   async createModule(courseId: string, createModuleDto: CreateModuleDto) {
     const courseIdObject = new Types.ObjectId(courseId);
-    const { title, nrOfQuestions, assessmentType } = createModuleDto;
+    const { title, nrOfQuestions, assessmentType, passingGrade } = createModuleDto;
     
     // Check if a module with the same title already exists
     const existingModule = await this.moduleModel.findOne({
@@ -99,6 +140,7 @@ export class ModuleService {
       numberOfQuestions: nrOfQuestions,
       assessmentType,
       content: [],
+      passingGrade,
     });
     await newModule.save();
 

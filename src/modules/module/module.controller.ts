@@ -10,13 +10,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadContentDto } from './dto/UploadContentDto';
 import { UpdateContentDto } from './dto/UpdateContentDto';
 import { multerConfig } from '../../config/multer.config';
+import { StudentGuard } from 'src/common/guards/student.guard';
+import { GetUser } from 'src/common/decorators/getUser.decorator';
 
 @ApiTags('Modules')
-@Controller('instructor/courses')
+@Controller()
 export class ModuleController {
   constructor(private readonly moduleService: ModuleService) {}
 
-  @Get(':courseId/modules')
+  @Get('instructor/courses/:courseId/modules')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Get all modules for a course' })
@@ -49,7 +51,7 @@ export class ModuleController {
     return await this.moduleService.getModulesHierarchy(course._id, sortOrder);
   }
 
-  @Get(':courseId/modules/:moduleId')
+  @Get('instructor/courses/:courseId/modules/:moduleId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Get a specific module' })
@@ -82,7 +84,41 @@ export class ModuleController {
     return await this.moduleService.getModuleById(course._id, module._id);
   }
 
-  @Post(':courseId/modules')
+  @Get('student/courses:courseId/modules/:moduleId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Get a specific module for a student' })
+  @ApiResponse({ status: 200, description: 'Module retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Module not found.' })
+  @ApiParam({ name: 'courseId', description: 'Course ID', type: String })
+  @ApiParam({ name: 'moduleId', description: 'Module ID', type: String })
+  async getStudentModuleById(
+    @AssignedParam(
+      {
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { course_id: string },
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
+    @GetUser('userId') userId: string
+  ) {
+    return await this.moduleService.getStudentModuleById(course.course_id, module._id, userId);
+  }
+
+  @Post('instructor/courses/:courseId/modules')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Create a new module for a course' })
@@ -107,12 +143,14 @@ export class ModuleController {
     return await this.moduleService.createModule(course._id, createModuleDto);
   }
 
-  @Post(':courseId/modules/:moduleId/upload')
+  @Post('instructor/courses/:courseId/modules/:moduleId/upload')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Upload content to a specific module of a course' })
   @ApiResponse({ status: 201, description: 'Content uploaded successfully.' })
   @ApiResponse({ status: 400, description: 'Bad request or invalid file.' })
+  @ApiParam({ name: 'courseId', description: 'Course ID', type: String })
+  @ApiParam({ name: 'moduleId', description: 'Module ID', type: String })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', multerConfig))
   async uploadContent(
