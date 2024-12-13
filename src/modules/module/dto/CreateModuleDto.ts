@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateModuleDto {
   @ApiProperty({
     description: 'Title of the module',
-    example: 'Introduction to AI',
+    example: 'Introduction to AI', 
   })
   @IsNotEmpty()
   @IsString()
@@ -28,4 +28,14 @@ export class CreateModuleDto {
   @IsNotEmpty()
   @IsEnum(['mcq', 'true_false', 'mix'])
   assessmentType: string;
+
+  @ApiProperty({
+    description: 'Minimum grade required to pass the quiz in this module',
+    example: '60',
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  passingGrade: number;
 }

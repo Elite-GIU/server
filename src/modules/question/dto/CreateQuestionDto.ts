@@ -1,5 +1,13 @@
-import { IsNotEmpty, IsEnum, IsString, IsArray, ArrayMinSize, ArrayMaxSize, IsNumber, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsEnum, IsString, IsArray, ArrayMinSize, ArrayMaxSize, IsNumber, Min, Max, Validate } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+
+function IsTwoOrFourChoices() {
+  return Validate((value: string[], obj: CreateQuestionDto) => {
+    return value.length === 2 || value.length === 4;
+  }, {
+    message: 'Choices must have either 2 or 4 items.'
+  });
+}
 
 export class CreateQuestionDto {
   @ApiProperty({
@@ -13,12 +21,11 @@ export class CreateQuestionDto {
   @ApiProperty({
     description: 'Array of possible answers',
     example: ['Paris', 'London', 'Berlin', 'Madrid'],
-    minItems: 4,
+    minItems: 2,
     maxItems: 4
   })
   @IsArray()
-  @ArrayMinSize(4)
-  @ArrayMaxSize(4)
+  @IsTwoOrFourChoices()
   @IsString({ each: true })
   choices: string[];
 

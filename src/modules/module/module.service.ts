@@ -5,10 +5,14 @@ import { ModuleEntity } from '../../database/schemas/module.schema';
 import { Questionbank } from '../../database/schemas/questionbank.schema';
 import { Question } from '../../database/schemas/question.schema';
 import { CreateModuleDto } from './dto/CreateModuleDto';
+import { GetModuleDto } from './dto/GetModuleDto';
 import { Content } from '../../database/schemas/content.schema';
 import * as path from 'path';
 import * as fs from 'fs';
+import { UpdateContentDto } from './dto/UpdateContentDto';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
+import { plainToInstance } from 'class-transformer';
+import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 
 @Injectable()
 export class ModuleService {
@@ -46,24 +50,34 @@ export class ModuleService {
       throw new NotFoundException(`No modules found for course with ID ${courseId}`);
     }
   
-    // Sort the nested `content` array within each module
-    const sortedModules = modules.map(module => {
+     // Sort the nested `content` array within each module
+    const sortedModules = modules.map((module) => {
       if (module.content && Array.isArray(module.content)) {
+        // Sorting the content array based on 'last_updated' property
         module.content.sort((a: any, b: any) => {
           const order = sortOrder === 'asc' ? 1 : -1;
-          return (new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime()) * order;
+          return (
+            (new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime()) * order
+          );
         });
       }
       return module;
     });
-  
-    return {
-      sortedModules,
-    };
+
+    // Map the sorted modules to the GetModuleDto structure
+    return plainToInstance(
+      GetModuleDto,
+      sortedModules.map((module) => ({
+        title: module.title,
+        nrOfQuestions: module.numberOfQuestions,
+        assessmentType: module.assessmentType,
+        passingGrade: module.passingGrade,
+      })),
+    );
   }
  
   // Function to get a specific module by its ID
-  async getModuleById(courseId: string, moduleId: string) {
+  async getInstructorModuleById(courseId: string, moduleId: string) {   
     // Convert courseId and moduleId to ObjectId
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -80,7 +94,6 @@ export class ModuleService {
   }
 
   async getStudentModuleById(courseId: string, moduleId: string, userId: string){
-
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
     const studentIdObject = new Types.ObjectId(userId);
@@ -112,16 +125,22 @@ export class ModuleService {
       .findOne({ _id: moduleIdObject, course_id: courseIdObject })
       .populate('content')
       .exec();
-
-    return {
-      module,
-    };
+    
+      // Filter the content to include only visible items
+      const filteredContent = (module.content || []).filter(
+        (contentItem: any) => contentItem.isVisible === true,
+      );
+    
+      return {
+        ...module.toObject(),
+        content: filteredContent,
+      };
   }
 
   // Function to create a new module for a course
   async createModule(courseId: string, createModuleDto: CreateModuleDto) {
     const courseIdObject = new Types.ObjectId(courseId);
-    const { title, nrOfQuestions, assessmentType } = createModuleDto;
+    const { title, nrOfQuestions, assessmentType, passingGrade } = createModuleDto;
     
     // Check if a module with the same title already exists
     const existingModule = await this.moduleModel.findOne({
@@ -139,6 +158,7 @@ export class ModuleService {
       numberOfQuestions: nrOfQuestions,
       assessmentType,
       content: [],
+      passingGrade,
     });
     await newModule.save();
 
@@ -199,5 +219,97 @@ export class ModuleService {
       }
       throw new BadRequestException(`Failed to upload content: ${error.message}`);
     }
+  }
+
+  async updateContent(moduleId: string, contentId: string, updateContentDto: UpdateContentDto, file?: Express.Multer.File) {
+
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const contentIdObject = new Types.ObjectId(contentId);
+    
+  
+    const existingContent = await this.contentModel.findById(contentIdObject);
+
+    if (file) {
+      const filePath = path.join('uploads', file.filename);
+      fs.renameSync(file.path, filePath);
+
+      const existingContentTitle = await this.contentModel.findOne({
+        title: updateContentDto.title,
+      });
+      if (existingContentTitle) {
+        fs.unlinkSync(filePath);
+        throw new BadRequestException('Content with the same title already exists.');
+      }
+
+      const content = await this.contentModel.create({
+        title: updateContentDto.title || existingContent.title,
+        description: updateContentDto.description || existingContent.description,
+        type: updateContentDto.type || existingContent.type,
+        isVisible: true,
+        content: filePath,
+      });
+
+      existingContent.isVisible = false;
+      await existingContent.save();
+
+      await this.moduleModel.findByIdAndUpdate(
+        moduleIdObject,
+        {
+          $push: { content: content._id },
+        },
+        { new: true, runValidators: true }
+      );
+
+      return content;
+    } else {
+      Object.keys(updateContentDto).forEach(key => {
+        if (updateContentDto[key] !== null && updateContentDto[key] !== undefined && updateContentDto[key] !== '') {
+            existingContent[key] = updateContentDto[key];
+        }
+    });
+      await existingContent.save();
+      return existingContent;
+    }
+  }
+
+  async downloadContent(contentId: string) {
+    const contentIdObj = new Types.ObjectId(contentId);
+    const content = await this.contentModel.findById(contentIdObj);
+
+    if (!content) throw new NotFoundException('Content not found');
+    return content;
+  }
+  async updateModule(
+    courseId: string,
+    moduleId: string,
+    updateData: {
+      assessmentType?: string;
+      numberOfQuestions?: number;
+      passingGrade?: number;
+    },
+    userId: string,
+  ) {
+    const courseIdObject = new Types.ObjectId(courseId);
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const studentIdObject = new Types.ObjectId(userId);
+  
+    // Check if any quizzes have been taken for this module
+    const quizResponses = await this.quizResponseModel.find({ module_id: moduleIdObject });
+  
+    if (quizResponses.length > 0) {
+      throw new ForbiddenException('Cannot update the module as quizzes have already been taken.');
+    }
+  
+    // Update the module
+    const updatedModule = await this.moduleModel.findByIdAndUpdate(
+      moduleIdObject,
+      {
+        ...(updateData.assessmentType && { assessmentType: updateData.assessmentType }),
+        ...(updateData.numberOfQuestions && { numberOfQuestions: updateData.numberOfQuestions }),
+        ...(updateData.passingGrade && { passingGrade: updateData.passingGrade }),
+      },
+      { new: true },
+    );
+    return updatedModule;
   }
 }
