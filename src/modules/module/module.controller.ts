@@ -8,9 +8,12 @@ import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadContentDto } from './dto/UploadContentDto';
+import { UpdateContentDto } from './dto/UpdateContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 
 @ApiTags('Modules')
 @Controller()
@@ -190,5 +193,63 @@ export class ModuleController {
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
   }
 
- 
+  @Put('instructor/courses/:courseId/modules/:moduleId/content/:contentId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, InstructorGuard)
+  @ApiOperation({ summary: 'Update content of a specific module of a course' })
+  @ApiResponse({ status: 201, description: 'Content updated successfully.' })
+  @ApiResponse({ status: 400, description: 'Bad request or invalid file.' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file', multerConfig))
+  @ApiParam({ name: 'courseId', required: true, description: 'ID of the course' })
+  @ApiParam({ name: 'moduleId', required: true, description: 'ID of the module' })
+  @ApiParam({ name: 'contentId', required: true, description: 'ID of the content to be updated' })
+  async updateContent(
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
+    @ExistParam(
+      { idKey: 'contentId', modelName: 'Content' },
+      CheckExistValidatorPipe,
+    )
+    content: {
+      id: string;
+      modelName: string;
+    },
+    @Body() updateContentDto: UpdateContentDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({ fileType: '.(pdf|doc|docx|ppt|pptx|jpg|jpeg|png|mp4)' }),
+          new MaxFileSizeValidator({ maxSize: 100 * 1024 * 1024 }), // 100MB
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    file?: Express.Multer.File,
+  ) {
+    try {
+      return await this.moduleService.updateContent(module._id, content.id, updateContentDto, file);
+    } catch (error) {
+      console.error('Error updating content:', error);
+      throw new BadRequestException('Failed to update content. Please check the input values.');
+    }
+  }
 }
