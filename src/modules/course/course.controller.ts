@@ -24,6 +24,7 @@ import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.
 import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { AddRatingDto } from './dto/AddRatingDto';
 
 @ApiTags('Courses')
 @Controller()
@@ -192,6 +193,25 @@ export class CourseController {
   @ApiResponse({ status: 404, description: 'No courses found with the specified status.' })
   getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
     return this.courseService.getStudentCoursesByStatus(userId, status);
+  }
+
+  @Post('student/courses/:id/rate')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Rate a course' })
+  @ApiResponse({ status: 200, description: 'Course rated successfully' })
+  async rateCourse(
+    @Body() ratingDto: AddRatingDto,
+    @AssignedParam({
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'id',
+    }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
+  ) {
+    return await this.courseService.rateCourse(course_id, ratingDto);
   }
 
   @Delete('instructor/courses/:id')

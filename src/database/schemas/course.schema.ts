@@ -20,6 +20,9 @@ export class Course extends Document {
 
   @Prop({ required: false})
   keywords?: Array<string>
+
+  @Prop({ type: [Number], default: [0, 0, 0, 0, 0], required: true })
+  ratings: number[];
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
