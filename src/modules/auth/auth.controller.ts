@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Put, Res, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Post, Body, Put, Res, BadRequestException, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -13,6 +13,7 @@ import { VerifyEmailDto } from './dto/VerifyEmailDto';
 import { WebAuthnDto } from './dto/webauthn.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -65,17 +66,18 @@ export class AuthController {
   }
 
   @Post('/register-webauthn')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Register for WebAuthn using Email and Browser Fingerprint' })
   @ApiResponse({ status: 200, description: 'WebAuthn registration options generated' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   @ApiBody({ type: WebAuthnDto })
-  @Public()
   async registerWebAuthn(@Body() webAuthnDto: WebAuthnDto) {
     return { options: await this.authService.generateRegistrationOptions(webAuthnDto.email, webAuthnDto.browserFingerprint) };
   }
 
   @Post('/verify-registration')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Verify WebAuthn registration' })
   @ApiResponse({ status: 200, description: 'Registration verified successfully' })
   @ApiResponse({ status: 400, description: 'Invalid registration data' })
@@ -86,7 +88,6 @@ export class AuthController {
       browserFingerprint: { type: 'string', required: ['browserFingerprint'] },
       response: { type: 'object', required: ['response'], description: 'WebAuthn response data' }
     }}})
-  @Public()
   async verifyRegistration(
     @Body() body: RegistrationResponseJSON & { email: string, browserFingerprint: string },
     @Res() res: Response

@@ -248,7 +248,7 @@ export class AuthService {
       const jwtToken = this.generateJwt(user);
 
       response.cookie('Token', jwtToken.access_token, {
-        httpOnly: true,
+        httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax', 
         expires: new Date(Date.now() + 3600000),
@@ -367,20 +367,20 @@ export class AuthService {
     try {
       options = generateRegistrationOptions({
         rpName: 'ExampleApp',
-        rpID: 'localhost',
-        userID: Uint8Array.from(new TextEncoder().encode(userIdentifier)),
+        rpID: 'localhost', // Adjusted for local testing
+        userID: Uint8Array.from(new TextEncoder().encode(userIdentifier)), // Ensure 'userIdentifier' is defined and a unique user ID
         userName: email,
         attestationType: 'none',
         authenticatorSelection: {
           userVerification: 'preferred',
-          residentKey: 'required',
+          residentKey: 'discouraged'
         },
-        supportedAlgorithmIDs: [-7, -257],
+        supportedAlgorithmIDs: [-7, -257], // ECDSA using P-256 and RSA with SHA-256
       });
     } catch (error) {
       throw new InternalServerErrorException('Error generating registration options.');
     }
-  
+    
     try {
       user.currentChallenge = (await options).challenge;
       await this.userService.update(user);
@@ -527,7 +527,14 @@ export class AuthService {
 
       user.currentChallenge = null;
       await this.userService.update(user);
-      
+
+      res.cookie('Token', this.generateJwt(user).access_token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict', 
+        expires: new Date(Date.now() + 3600000),  
+      });
+
       res.status(200).json({
         message: 'Authentication verified successfully!',
         verified: true,
