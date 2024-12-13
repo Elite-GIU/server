@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: false } })
-export class Course extends Document {
+export class CourseArchive extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   instructor_id: Types.ObjectId;
 
@@ -20,9 +20,6 @@ export class Course extends Document {
 
   @Prop({ required: false})
   keywords?: Array<string>
-
-  @Prop({ type: [Number], default: [0, 0, 0, 0, 0], required: true })
-  ratings: number[];
 }
 
-export const CourseSchema = SchemaFactory.createForClass(Course);
+export const CourseArchiveSchema = SchemaFactory.createForClass(CourseArchive);

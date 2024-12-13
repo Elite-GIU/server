@@ -6,6 +6,9 @@ import {
   Body,
   Param,
   Query,
+  Patch,
+  Put,
+  Delete,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
@@ -26,6 +29,7 @@ import { RoomDto } from './dto/RoomDto';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
+import { ThreadEditDto } from './dto/ThreadEditDto';
 @Controller('chat')
 @ApiTags('Chat')
 @UseGuards(JwtAuthGuard)
@@ -425,6 +429,75 @@ export class ChatController {
       thread._id,
       message._id,
       threadMessageReplyData,
+    );
+  }
+
+  // Edit a thread
+  @Put('forums/courses/:courseId/threads/:threadId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
+  @ApiOperation({ summary: 'Edit a thread' })
+  @ApiResponse({ status: 200, description: 'Thread edited successfully' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
+  async editThread(
+    @GetUser('userId') userId: string,
+
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    thread: {
+      _id: string;
+      course_id: string;
+    },
+    @Body() threadData: ThreadEditDto,
+  ) {
+    return this.chatService.editThread(
+      userId,
+      thread.course_id,
+      thread._id,
+      threadData,
+    );
+  }
+
+  // Delete a thread by student or course instructor
+  @Delete('forums/courses/:courseId/threads/:threadId/delete')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
+  @ApiOperation({ summary: 'Delete a thread' })
+  @ApiResponse({ status: 200, description: 'Thread deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Thread not found' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
+  async deleteThread(
+    @GetUser('userId') userId: string,
+    @GetUser('role') role: string,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    thread: {
+      _id: string;
+      course_id: string;
+    },
+  ) {
+    return this.chatService.deleteThread(
+      userId,
+      role,
+      thread.course_id,
+      thread._id,
     );
   }
 }

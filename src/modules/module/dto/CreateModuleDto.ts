@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateModuleDto {
   @ApiProperty({
     description: 'Title of the module',
-    example: 'Introduction to AI',
+    example: 'Introduction to AI', 
   })
   @IsNotEmpty()
   @IsString()
