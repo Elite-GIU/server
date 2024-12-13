@@ -81,7 +81,7 @@ export class ModuleController {
       CheckAssignedValidatorPipe,
     ) module: { _id: string },
   ) {
-    return await this.moduleService.getModuleById(course._id, module._id);
+    return await this.moduleService.getInstructorModuleById(course._id, module._id);
   }
 
   @Get('student/courses:courseId/modules/:moduleId')
@@ -190,8 +190,9 @@ export class ModuleController {
     }
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
   }
-  @Put(':courseId/:moduleId/UpdateAssesment')
-  @UseGuards(JwtAuthGuard, InstructorGuard) // added after the test
+  @Put('instructor/courses/:courseId/modules/:moduleId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Update a specific module within a course' })
   @ApiParam({ name: 'courseId', description: 'ID of the course containing the module' })
   @ApiParam({ name: 'moduleId', description: 'ID of the module to update' })
@@ -199,15 +200,33 @@ export class ModuleController {
   @ApiResponse({ status: 400, description: 'Bad Request: Invalid input data' })
   @ApiResponse({ status: 403, description: 'Forbidden: Cannot update module as quizzes have already been taken' })
   @ApiResponse({ status: 404, description: 'Not Found: Module not found in the course' })
-  @ApiResponse({ status: 500, description: 'Internal Server Error' })
   async updateModule(
     @Param('courseId') courseId: string,
     @Param('moduleId') moduleId: string,
     @Body() updateData: UpdateModuleAssessmentDto,
-    @GetUser('userId') userId: string
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
   ) {
     return this.moduleService.updateModule(courseId, moduleId, updateData, userId);
-  }
-
+  }  
  
 }

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsEnum, Min, Max } from 'class-validator';
+import { IsOptional, IsNumber, IsEnum, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateModuleAssessmentDto {
@@ -7,7 +7,7 @@ export class UpdateModuleAssessmentDto {
     example: 'mcq',
     enum: ['mcq', 'true_false', 'mix'],
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsEnum(['mcq', 'true_false', 'mix'])
   assessmentType: string;
 
@@ -15,7 +15,7 @@ export class UpdateModuleAssessmentDto {
     description: 'Number of questions in the assessment',
     example: 10,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(500)
@@ -25,7 +25,7 @@ export class UpdateModuleAssessmentDto {
     description: 'Minimum grade required to pass the quiz in this module',
     example: 60,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)

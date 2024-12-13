@@ -76,7 +76,7 @@ export class ModuleService {
   }
  
   // Function to get a specific module by its ID
-  async getModuleById(courseId: string, moduleId: string) { // this is specific for the instructor  
+  async getInstructorModuleById(courseId: string, moduleId: string) {   
     // Convert courseId and moduleId to ObjectId
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -92,8 +92,7 @@ export class ModuleService {
     };
   }
 
-  async getStudentModuleById(courseId: string, moduleId: string, userId: string){ // this is specific for the student 
-
+  async getStudentModuleById(courseId: string, moduleId: string, userId: string){
     const courseIdObject = new Types.ObjectId(courseId);
     const moduleIdObject = new Types.ObjectId(moduleId);
     const studentIdObject = new Types.ObjectId(userId);
@@ -238,14 +237,6 @@ export class ModuleService {
     const moduleIdObject = new Types.ObjectId(moduleId);
     const studentIdObject = new Types.ObjectId(userId);
   
-    // Retrieve all modules in the course and validate the moduleId
-    const modules = await this.moduleModel.find({ course_id: courseIdObject }).sort({ created_at: 1 });
-    const currentModuleIndex = modules.findIndex(module => module._id.toString() === moduleIdObject.toString());
-  
-    if (currentModuleIndex === -1) {
-      throw new NotFoundException(`Module with ID ${moduleId} not found in course with ID ${courseId}.`);
-    }
-  
     // Check if any quizzes have been taken for this module
     const quizResponses = await this.quizResponseModel.find({ module_id: moduleIdObject });
   
@@ -263,13 +254,6 @@ export class ModuleService {
       },
       { new: true },
     );
-  
-    if (!updatedModule) {
-      throw new NotFoundException('Failed to update the module. Please try again.');
-    }
-  
     return updatedModule;
   }
-  
-  
 }
