@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -192,4 +193,22 @@ export class CourseController {
   getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
     return this.courseService.getStudentCoursesByStatus(userId, status);
   }
+
+  @Delete('instructor/courses/:id')
+  @UseGuards(JwtAuthGuard, InstructorGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a course under the logged in instructor' })
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  async deleteInstructorCourse(@Param('id') id : string, @GetUser('userId') userId: string, @AssignedParam({
+    modelName: 'Course', 
+    firstAttrName: 'instructor_id', 
+    secondAttrName: '_id', 
+    firstKey: 'userId', 
+    secondKey: 'id',
+  }, CheckAssignedValidatorPipe) course : {instructor_id: string, _id: string}){
+      
+      return await this.courseService.deleteInstructorCourse(id, userId);   
+
+  }
 }
+  
