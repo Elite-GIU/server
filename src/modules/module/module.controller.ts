@@ -193,7 +193,7 @@ export class ModuleController {
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
   }
 
-  @Put('instructor/courses/:courseId/modules/:moduleId/update/:contentId')
+  @Put('instructor/courses/:courseId/modules/:moduleId/content/:contentId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Update content of a specific module of a course' })
