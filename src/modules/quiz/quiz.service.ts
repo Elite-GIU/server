@@ -160,20 +160,35 @@ export class QuizService {
   }
 
   private async handleCompletionPercentage(studentId: string, moduleId: string, courseId: string, score: number) {
+    const module_id = new Types.ObjectId(moduleId);
+    const user_id = new Types.ObjectId(studentId);
+    const course_id = new Types.ObjectId(courseId);
+
     const studentQuizResponses = await this.quizResponseModel.find({
         user_id: new Types.ObjectId(studentId),
         module_id: new Types.ObjectId(moduleId)
     }).exec();
-
+    
     const passedQuizResponses = studentQuizResponses.filter(response => response.finalGrade === 'passed');
+    const highestScores = await this.dashboardService.getHighestStudentQuizzesByCourse(studentId, courseId);
+    let completedModules = 0;
+    if (Array.isArray(highestScores)) {
+      const passedModules = highestScores.filter(response => response.highestQuiz && response.highestQuiz.finalGrade === 'passed');
+      completedModules = passedModules.length + 1;
+    } else {
+      completedModules = 1;
+    }
+    const totalModules = await this.moduleModel.countDocuments({ course_id }).exec();
+    const completionPercentage = (completedModules / totalModules) * 100;
 
-    if(score >= 50 && passedQuizResponses.length === 0) {
+    const module = await this.moduleModel.findById(module_id).exec();
+    if(score >= module.passingGrade && passedQuizResponses.length === 0) {
         await this.studentCourseModel.findOneAndUpdate({
             user_id: new Types.ObjectId(studentId),
             course_id: new Types.ObjectId(courseId)
         },
         {
-            $inc: { completion_percentage: 1 },
+            $set: { completion_percentage: completionPercentage },
             $push: { last_accessed: new Date() }
         });
     } else {
