@@ -84,11 +84,11 @@ export class CourseController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a course under the logged in instructor' })
     async addInstructorCourse(@Body() createCourseDto: CreateCourseDto, @GetUser('userId') userId : string){
-       try {
-         return await this.courseService.addInstructorCourse(createCourseDto, userId);
-       }catch(error){
+      try {
+        return await this.courseService.addInstructorCourse(createCourseDto, userId);
+      }catch(error){
         throw new InternalServerErrorException('Course creation failed : ' + error.message);
-       }
+      }
 
     }
 
