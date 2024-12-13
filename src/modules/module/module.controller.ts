@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body, UseGuards, UploadedFile, UseInterceptors, BadRequestException, ParseFilePipe, FileTypeValidator, MaxFileSizeValidator ,Query} from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, UseGuards, UploadedFile, UseInterceptors, BadRequestException, ParseFilePipe, FileTypeValidator, MaxFileSizeValidator ,Query, Res, NotFoundException} from '@nestjs/common';
 import { ModuleService } from './module.service';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { InstructorGuard } from 'src/common/guards/instructor.guard';
@@ -12,8 +12,10 @@ import { UpdateContentDto } from './dto/UpdateContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { createReadStream } from 'fs';
+import { Response } from 'express';
 
 @ApiTags('Modules')
 @Controller()
@@ -251,5 +253,62 @@ export class ModuleController {
       console.error('Error updating content:', error);
       throw new BadRequestException('Failed to update content. Please check the input values.');
     }
+  }
+
+  @Get("student/courses/:courseId/modules/:moduleId/content/:contentId/download")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, StudentGuard)
+  @ApiOperation({ summary: 'Download content of a specific module of a course' })
+  @ApiResponse({ status: 200, description: 'Content downloaded successfully.' })
+  @ApiResponse({ status: 404, description: 'Content not found.' })
+  @ApiParam({name: "courseId", description: "ID of the course", type: String})
+  @ApiParam({name: "moduleId", description: "ID of the module", type: String})
+  @ApiParam({name: "contentId", description: "ID of the content", type: String})
+  async downloadContent(
+    @Res() response: Response,
+    @GetUser('userId') userId: string, 
+    @AssignedParam(
+      {
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+      modelName: 'ModuleEntity',
+      firstAttrName: 'course_id',
+      secondAttrName: '_id',
+      firstKey: 'courseId',
+      secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
+    @ExistParam(
+      { idKey: 'contentId', modelName: 'Content' },
+      CheckExistValidatorPipe,
+    )
+    content: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+    const contentRes = await this.moduleService.downloadContent(content.id);
+
+    if (contentRes.isVisible) {
+      const fileName = contentRes.content.replace('uploads/', '');
+      const filePath = contentRes.content;
+      const fileStream = createReadStream(filePath);
+  
+      response.set('Content-Type', contentRes.type === 'document' ? 'application/pdf' : 'application/octet-stream');
+      response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      fileStream.pipe(response);
+  } else {
+      throw new NotFoundException('Content is not visible');
+  }
   }
 }

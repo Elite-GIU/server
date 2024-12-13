@@ -253,4 +253,12 @@ export class ModuleService {
       return existingContent;
     }
   }
+
+  async downloadContent(contentId: string) {
+    const contentIdObj = new Types.ObjectId(contentId);
+    const content = await this.contentModel.findById(contentIdObj);
+
+    if (!content) throw new NotFoundException('Content not found');
+    return content;
+  }
 }

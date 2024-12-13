@@ -1,7 +1,7 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Res, NotFoundException, StreamableFile, Param } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiTags } from '@nestjs/swagger';

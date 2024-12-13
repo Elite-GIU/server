@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
 import { User } from '../../database/schemas/user.schema';
+import { Content } from '../../database/schemas/content.schema';
 
 @Injectable()
 export class StudentService {
@@ -24,4 +25,6 @@ export class StudentService {
 
     return courses;
   }
+
+  
 }
