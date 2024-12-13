@@ -10,7 +10,6 @@ export class StudentService {
   constructor(
     @InjectModel(Course.name) private readonly courseModel: Model<Course>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
-    @InjectModel(Content.name) private readonly contentModel: Model<Content>,
   ) {}
 
   async getLearningPath(userId: string) {

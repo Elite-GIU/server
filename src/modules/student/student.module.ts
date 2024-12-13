@@ -21,8 +21,6 @@ import { AuthModule } from '../auth/auth.module';
       { name: Course.name, schema: CourseSchema },
       { name: User.name, schema: UserSchema },
       { name: StudentCourse.name, schema: StudentCourseSchema },
-      { name: ModuleEntity.name, schema: ModuleSchema },
-      { name: Content.name, schema: ContentSchema },
     ]),
     AuthModule,
   ],
