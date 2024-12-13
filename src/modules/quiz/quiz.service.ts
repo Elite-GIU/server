@@ -161,15 +161,8 @@ export class QuizService {
 
   private async handleCompletionPercentage(studentId: string, moduleId: string, courseId: string, score: number) {
     const module_id = new Types.ObjectId(moduleId);
-    const user_id = new Types.ObjectId(studentId);
     const course_id = new Types.ObjectId(courseId);
 
-    const studentQuizResponses = await this.quizResponseModel.find({
-        user_id: new Types.ObjectId(studentId),
-        module_id: new Types.ObjectId(moduleId)
-    }).exec();
-    
-    const passedQuizResponses = studentQuizResponses.filter(response => response.finalGrade === 'passed');
     const highestScores = await this.dashboardService.getHighestStudentQuizzesByCourse(studentId, courseId);
     let completedModules = 0;
     if (Array.isArray(highestScores)) {
@@ -182,7 +175,7 @@ export class QuizService {
     const completionPercentage = (completedModules / totalModules) * 100;
 
     const module = await this.moduleModel.findById(module_id).exec();
-    if(score >= module.passingGrade && passedQuizResponses.length === 0) {
+    if(score >= module.passingGrade) {
         await this.studentCourseModel.findOneAndUpdate({
             user_id: new Types.ObjectId(studentId),
             course_id: new Types.ObjectId(courseId)
