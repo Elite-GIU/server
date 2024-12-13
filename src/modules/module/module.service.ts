@@ -63,9 +63,9 @@ export class ModuleService {
       return module;
     });
 
-    // Map the sorted modules to the CreateModuleDto structure
+    // Map the sorted modules to the GetModuleDto structure
     return plainToInstance(
-      CreateModuleDto,
+      GetModuleDto,
       sortedModules.map((module) => ({
         title: module.title,
         nrOfQuestions: module.numberOfQuestions,
