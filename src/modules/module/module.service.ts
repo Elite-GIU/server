@@ -124,10 +124,6 @@ export class ModuleService {
       .findOne({ _id: moduleIdObject, course_id: courseIdObject })
       .populate('content')
       .exec();
-
-      if (!module) {
-        throw new Error('Module not found.');
-      }
     
       // Filter the content to include only visible items
       const filteredContent = (module.content || []).filter(
