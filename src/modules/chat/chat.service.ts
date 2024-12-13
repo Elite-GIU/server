@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Model, Schema, Types } from 'mongoose';
+import { Model, ObjectId, Schema, Types } from 'mongoose';
 import { RoomMessage } from 'src/database/schemas/roomMessage.schema';
 import { MessageDto } from './dto/MessageDto';
 import { ThreadDto } from './dto/ThreadDto';
@@ -13,6 +13,8 @@ import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 import { RoomDto } from './dto/RoomDto';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 import { ThreadEditDto } from './dto/ThreadEditDto';
+import { NotificationService } from '../notification/notification.service';
+import { Notification } from 'src/database/schemas/notification.schema';
 
 @Injectable()
 export class ChatService {
@@ -29,6 +31,8 @@ export class ChatService {
     @InjectModel(ThreadMessageReply.name)
     private readonly threadMessageReplyModel: Model<ThreadMessageReply>,
     @InjectModel(StudyRoom.name) private readonly roomModel: Model<StudyRoom>,
+    @InjectModel(Notification.name)
+    private readonly notificationModel: Model<Notification>,
   ) {}
 
   async isAssociatedWithCourse(
@@ -227,6 +231,20 @@ export class ChatService {
       });
 
       await this.roomMessageModel.create(message);
+      //Get the room name
+      const { title } = await this.roomModel.findOne({
+        _id: new Types.ObjectId(room_id),
+      });
+      // Get the sender name
+      const { name } = await this.userModel.findOne({ _id: sender_id });
+      // Save the notification
+      const { members_list } = await this.roomModel.findOne({ _id: room_id });
+      await this.sendNotification(
+        members_list,
+        'New Message',
+        `You have a new message in ${title} from ${name}`,
+        'message',
+      );
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
@@ -268,6 +286,17 @@ export class ChatService {
         content,
       });
       await this.roomMessageModel.create(reply);
+      const { title } = await this.roomModel.findOne({
+        _id: new Types.ObjectId(room_id),
+      });
+      const { name } = await this.userModel.findOne({ _id: sender_id });
+      const { members_list } = await this.roomModel.findOne({ _id: room_id });
+      await this.sendNotification(
+        members_list,
+        'New Reply',
+        `You have a new reply in ${title} from ${name}`,
+        'message',
+      );
       return {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
@@ -397,9 +426,36 @@ export class ChatService {
       );
     }
   }
+  async getMembers(user_id: string, course_id: string) {
+    const enrolled = await this.isAssociatedWithCourse(user_id, course_id);
+    if (!enrolled) {
+      throw new HttpException(
+        'You are not associated with this course',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const members = await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .populate('user_id', 'name email').select('user_id');
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Members fetched successfully',
+      data: members,
+    };
+  }
+  async getMembersList(course_id: string) {
+    return await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .select('user_id');
+  }
 
   async postThread(
     creator_id: string,
+    role: string,
     course_id: string,
     threadData: ThreadDto,
   ) {
@@ -420,6 +476,19 @@ export class ChatService {
       });
 
       await this.threadModel.create(thread);
+      const { title: courseName } = await this.courseModel.findOne({
+        _id: new Types.ObjectId(course_id),
+      });
+      const { name } = await this.userModel.findOne({ _id: creator_id });
+      const type = role === 'instructor' ? 'Announcement' : 'Thread';
+      //Get student id list from course by id
+      const members_list = this.getMembersList(course_id);
+      await this.sendNotification(
+        members_list,
+        `New ${type}`,
+        `You have a new ${type} in ${courseName} from ${name}`,
+        'thread',
+      );
       return {
         statusCode: HttpStatus.OK,
         message: 'Thread created successfully',
@@ -457,6 +526,18 @@ export class ChatService {
         content,
       });
       await this.threadMessageModel.create(message);
+      const members_list = this.getMembersList(course_id);
+      const { title } = await this.threadModel.findOne({
+        _id: new Types.ObjectId(thread_id),
+      });
+      const { name } = await this.userModel.findOne({ _id: userId });
+      await this.sendNotification(
+        members_list,
+        'New Message',
+        `You have a new message in ${title} thread from ${name}`,
+        'thread',
+      );
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
@@ -496,6 +577,17 @@ export class ChatService {
         content,
       });
       await this.threadMessageReplyModel.create(reply);
+      const members_list = this.getMembersList(course_id);
+      const { title } = await this.threadModel.findOne({
+        _id: new Types.ObjectId(thread_id),
+      });
+      const { name } = await this.userModel.findOne({ _id: userId });
+      await this.sendNotification(
+        members_list,
+        'New Reply',
+        `You have a new reply in ${title} thread from ${name}`,
+        'thread',
+      );
       return {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
@@ -605,5 +697,19 @@ export class ChatService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async sendNotification(
+    notify_list: any,
+    title: string,
+    message: string,
+    type: string,
+  ) {
+    await this.notificationModel.create({
+      notify_list: notify_list.map(member => new Types.ObjectId(member.user_id)),
+      title: title,
+      message: message,
+      type: type,
+    });
   }
 }
