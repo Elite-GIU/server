@@ -210,10 +210,6 @@ export class ModuleService {
     
   
     const existingContent = await this.contentModel.findById(contentIdObject);
-  
-    if (!existingContent) {
-      throw new NotFoundException('Content not found');
-    }
 
     if (file) {
       const filePath = path.join('uploads', file.filename);

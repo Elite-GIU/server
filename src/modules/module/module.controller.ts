@@ -12,6 +12,8 @@ import { UpdateContentDto } from './dto/UpdateContentDto';
 import { multerConfig } from '../../config/multer.config';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
 
 @ApiTags('Modules')
 @Controller()
@@ -191,7 +193,7 @@ export class ModuleController {
     return await this.moduleService.uploadContent(module._id, uploadContentDto, file);
   }
 
-  @Put(':courseId/modules/:moduleId/update/:contentId')
+  @Put('instructor/courses/:courseId/modules/:moduleId/update/:contentId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, InstructorGuard)
   @ApiOperation({ summary: 'Update content of a specific module of a course' })
@@ -223,7 +225,14 @@ export class ModuleController {
       },
       CheckAssignedValidatorPipe,
     ) module: { _id: string },
-    @Param('contentId') contentId: string,
+    @ExistParam(
+      { idKey: 'contentId', modelName: 'Content' },
+      CheckExistValidatorPipe,
+    )
+    content: {
+      id: string;
+      modelName: string;
+    },
     @Body() updateContentDto: UpdateContentDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -237,10 +246,10 @@ export class ModuleController {
     file?: Express.Multer.File,
   ) {
     try {
-      return await this.moduleService.updateContent(module._id, contentId, updateContentDto, file);
-  } catch (error) {
+      return await this.moduleService.updateContent(module._id, content.id, updateContentDto, file);
+    } catch (error) {
       console.error('Error updating content:', error);
       throw new BadRequestException('Failed to update content. Please check the input values.');
-  }
     }
   }
+}
