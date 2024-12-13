@@ -236,6 +236,11 @@ export class ModuleController {
     )
     file?: Express.Multer.File,
   ) {
+    try {
       return await this.moduleService.updateContent(module._id, contentId, updateContentDto, file);
+  } catch (error) {
+      console.error('Error updating content:', error);
+      throw new BadRequestException('Failed to update content. Please check the input values.');
+  }
     }
   }

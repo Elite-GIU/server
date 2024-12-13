@@ -2,6 +2,14 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { IsOptionalMinLength } from '../../../common/decorators/optional-min-length.decorator';
 
+enum ContentType {
+  Video = 'video',
+  Document = 'document',
+  Website = 'website',
+  Assignment = 'assignment',
+  Tutorial = 'tutorial',
+  Slides = 'slides',
+}
 export class UpdateContentDto {
   @ApiPropertyOptional({
     description: 'Title of the content being updated',
@@ -22,9 +30,9 @@ export class UpdateContentDto {
     enum: ['video', 'document', 'website', 'assignment', 'tutorial', 'slides'],
   })
   @IsOptional()
-  @IsEnum(['video', 'document', 'website', 'assignment', 'tutorial', 'slides'])
-  type?: string;
-
+  @IsEnum(ContentType)
+  type?: ContentType | null;
+  
   @ApiPropertyOptional({
     description: 'The file being updated',
     type: 'string',

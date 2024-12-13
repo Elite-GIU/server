@@ -248,7 +248,11 @@ export class ModuleService {
 
       return content;
     } else {
-      Object.assign(existingContent, updateContentDto)
+      Object.keys(updateContentDto).forEach(key => {
+        if (updateContentDto[key] !== null && updateContentDto[key] !== undefined && updateContentDto[key] !== '') {
+            existingContent[key] = updateContentDto[key];
+        }
+    });
       await existingContent.save();
       return existingContent;
     }
