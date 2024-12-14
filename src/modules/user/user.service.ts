@@ -47,7 +47,20 @@ export class UserService {
     };
     return myProfile;
   }
+  
+  async getName(userId: string): Promise<string> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      return '';
+    }
+    return user.name;
+  }
 
+  async getInstructorName(userId: string): Promise<string> {
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    const user = await this.userModel.findById(userIdObj).exec();
+    return user.name;
+  }
   // Method to get user profile by ID
   async getMyProfile(userId: string): Promise<MyProfileDto | null> {
     const user = await this.userModel.findById(userId).exec();
