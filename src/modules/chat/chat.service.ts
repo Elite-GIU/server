@@ -239,10 +239,11 @@ export class ChatService {
       const { name } = await this.userModel.findOne({ _id: sender_id });
       // Save the notification
       const { members_list } = await this.roomModel.findOne({ _id: room_id });
+      // Destructure members_list to array of user_id
       await this.sendNotification(
         members_list,
         'New Message',
-        `You have a new message in ${title} from ${name}`,
+        `You have a new message in ${title} from ${name} : ${content}`,
         'message',
       );
       return {
@@ -294,7 +295,7 @@ export class ChatService {
       await this.sendNotification(
         members_list,
         'New Reply',
-        `You have a new reply in ${title} from ${name}`,
+        `You have a new reply in ${title} from ${name}: ${content}`,
         'message',
       );
       return {
@@ -438,7 +439,8 @@ export class ChatService {
       .find({
         course_id: new Types.ObjectId(course_id),
       })
-      .populate('user_id', 'name email').select('user_id');
+      .populate('user_id', 'name email')
+      .select('user_id');
     return {
       statusCode: HttpStatus.OK,
       message: 'Members fetched successfully',
@@ -482,11 +484,11 @@ export class ChatService {
       const { name } = await this.userModel.findOne({ _id: creator_id });
       const type = role === 'instructor' ? 'Announcement' : 'Thread';
       //Get student id list from course by id
-      const members_list = this.getMembersList(course_id);
+      const members_list = await this.getMembersList(course_id);
       await this.sendNotification(
         members_list,
         `New ${type}`,
-        `You have a new ${type} in ${courseName} from ${name}`,
+        `You have a new ${type} in ${courseName} from ${name}: ${title}`,
         'thread',
       );
       return {
@@ -526,7 +528,7 @@ export class ChatService {
         content,
       });
       await this.threadMessageModel.create(message);
-      const members_list = this.getMembersList(course_id);
+      const members_list = await this.getMembersList(course_id);
       const { title } = await this.threadModel.findOne({
         _id: new Types.ObjectId(thread_id),
       });
@@ -534,7 +536,7 @@ export class ChatService {
       await this.sendNotification(
         members_list,
         'New Message',
-        `You have a new message in ${title} thread from ${name}`,
+        `You have a new message in ${title} thread from ${name}: ${content}`,
         'thread',
       );
 
@@ -577,7 +579,7 @@ export class ChatService {
         content,
       });
       await this.threadMessageReplyModel.create(reply);
-      const members_list = this.getMembersList(course_id);
+      const members_list = await this.getMembersList(course_id);
       const { title } = await this.threadModel.findOne({
         _id: new Types.ObjectId(thread_id),
       });
@@ -585,7 +587,7 @@ export class ChatService {
       await this.sendNotification(
         members_list,
         'New Reply',
-        `You have a new reply in ${title} thread from ${name}`,
+        `You have a new reply in ${title} thread from ${name}: ${content}`,
         'thread',
       );
       return {
@@ -705,8 +707,18 @@ export class ChatService {
     message: string,
     type: string,
   ) {
+    var transformedNotifyList;
+    if (type === 'thread') {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member.user_id),
+      );
+    } else {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member),
+      );
+    }
     await this.notificationModel.create({
-      notify_list: notify_list.map(member => new Types.ObjectId(member.user_id)),
+      notify_list: transformedNotifyList,
       title: title,
       message: message,
       type: type,

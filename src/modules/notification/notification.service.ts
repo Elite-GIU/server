@@ -10,7 +10,6 @@ export class NotificationService {
     private readonly notificationModel: Model<Notification>,
   ) {}
   async getNotifications(userId: string) {
-    console.log(userId);
     return await this.notificationModel
       .find({ notify_list: { $in: [new Types.ObjectId(userId)] } })
       .sort({ createdAt: -1 });
