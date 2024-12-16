@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   HttpException,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -11,8 +13,13 @@ import { UserService } from '../user/user.service';
 import { RegisterUserDto } from './dto/RegisterUserDto';
 import { LoginUserDto } from './dto/LoginUserDto';
 import { VerifyEmailDto } from './dto/VerifyEmailDto';
-import { randomInt } from 'crypto';
+import {  randomInt } from 'crypto';
 import axios from 'axios';
+import { Response } from 'express';
+import { AuthenticationResponseJSON, generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
+import { RegistrationResponseJSON } from '@simplewebauthn/types';
+import { TextEncoder } from 'util'; 
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -222,8 +229,7 @@ export class AuthService {
     }
   }
 
-  // Log in a user
-  async login(userData: LoginUserDto) {
+  async login(userData: LoginUserDto, @Res() response: Response) {
     const { email, password } = userData;
 
     try {
@@ -239,11 +245,21 @@ export class AuthService {
         });
       }
 
-      return {
-        statusCode: 200,
+      const jwtToken = this.generateJwt(user);
+
+      response.cookie('Token', jwtToken.access_token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax', 
+        expires: new Date(Date.now() + 3600000),
+      });
+
+      response.status(201).json({
+        statusCode: 201,
         message: 'Login successful.',
-        data: this.generateJwt(user),
-      };
+        data: jwtToken,
+      });
+
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -255,7 +271,7 @@ export class AuthService {
       });
     }
   }
-
+  
   // Validate user for login
   private validateUserForLogin(user: any) {
     if (!user) {
@@ -295,4 +311,241 @@ export class AuthService {
       });
     }
   }
+
+  private generateHash(email: string, browserFingerprint: string): string {
+    const crypto = require('crypto');
+    return crypto.createHash('sha256').update(`${email}${browserFingerprint}`).digest('hex');
+  }
+
+  // Check biometric authentication for a user using email and browser fingerprint
+  async checkBiometricAuth(email: string, browserFingerprint: string): Promise<boolean> {
+    let hash: string;
+    try {
+        hash = this.generateHash(email, browserFingerprint);
+    } catch (error) {
+        throw new InternalServerErrorException('Error occurred while generating hash for biometric data.');
+    }
+
+    let user;
+    try {
+        user = await this.userService.findByEmail(email);
+    } catch (error) {
+        throw new InternalServerErrorException('Database access failed while trying to find user.');
+    }
+
+    if (!user) {
+        throw new NotFoundException('User not found.');
+    }
+
+    if (user.biometricHash === hash) {
+        return true;
+    } else {
+        return false;
+    }
 }
+  // Generate WebAuthn registration options for a user 
+  async generateRegistrationOptions(email: string, browserFingerprint: string) {
+    let user;
+    try {
+      user = await this.userService.findByEmail(email);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to access user data from database.');
+    }
+  
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+  
+    let userIdentifier;
+    try {
+      userIdentifier = this.generateHash(email, browserFingerprint);
+    } catch (error) {
+      throw new InternalServerErrorException('Error generating user identifier.');
+    }
+  
+    let options;
+    try {
+      options = generateRegistrationOptions({
+        rpName: 'ExampleApp',
+        rpID: 'localhost', // Adjusted for local testing
+        userID: Uint8Array.from(new TextEncoder().encode(userIdentifier)), // Ensure 'userIdentifier' is defined and a unique user ID
+        userName: email,
+        attestationType: 'none',
+        authenticatorSelection: {
+          userVerification: 'preferred',
+          residentKey: 'discouraged'
+        },
+        supportedAlgorithmIDs: [-7, -257], // ECDSA using P-256 and RSA with SHA-256
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Error generating registration options.');
+    }
+    
+    try {
+      user.currentChallenge = (await options).challenge;
+      await this.userService.update(user);
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to update user challenge in database.');
+    }
+  
+    return options;
+  }
+    
+  // Verify WebAuthn registration
+  async verifyRegistration(
+    response: RegistrationResponseJSON & { email: string, browserFingerprint: string },
+    @Res() res: Response
+  ) {
+    const { email, browserFingerprint, ...webAuthnResponse } = response;
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+  
+    try {
+      const rawIdBuffer = Buffer.from(webAuthnResponse.rawId, 'base64url');
+  
+      const verification = await verifyRegistrationResponse({
+        response: webAuthnResponse,
+        expectedChallenge: user.currentChallenge,
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost',
+        requireUserVerification: true,
+      });
+  
+      if (!verification.verified) {
+        throw new BadRequestException({
+          statusCode: 400,
+          errorCode: 'REGISTRATION_VERIFICATION_FAILED',
+          message: 'Verification of WebAuthn registration failed.',
+        });
+      }
+  
+      user.webAuthnCredentials = {
+        credentialID: rawIdBuffer,
+        publicKey: Buffer.from(verification.registrationInfo.credential.publicKey),
+        counter: verification.registrationInfo.credential.counter,
+        transports: verification.registrationInfo.credential.transports || [],
+      };
+  
+      const biometricHash = this.generateHash(email, browserFingerprint);
+      user.currentChallenge = null;
+      user.biometricHash = biometricHash;
+      await this.userService.update(user);
+  
+      res.status(200).json({
+        message: 'Biometric registration verified successfully!',
+        verified: true,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        errorCode: 'VERIFICATION_ERROR',
+        message: 'An error occurred during WebAuthn registration verification.',
+      });
+    }
+  }  
+  
+  // Generate WebAuthn authentication options for a user
+  async generateAuthenticationOptions(email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user || !user.webAuthnCredentials) {
+      throw new NotFoundException({
+        statusCode: 404,
+        errorCode: 'USER_NOT_FOUND',
+        message: 'User or user credentials not found.',
+      });
+    }
+  
+    if (!user.webAuthnCredentials.credentialID || !user.webAuthnCredentials.publicKey) {
+      throw new NotFoundException({
+        statusCode: 404,
+        errorCode: 'CREDENTIALS_NOT_FOUND',
+        message: 'No valid credentials available for user.',
+      });
+    }
+  
+    const allowCredentials = [{
+      type: 'public-key',
+      id: user.webAuthnCredentials.credentialID.toString('base64url'), 
+    }];
+  
+    try {
+      const options = generateAuthenticationOptions({
+        rpID: 'localhost',
+        userVerification: 'preferred',
+        allowCredentials,
+        challenge: crypto.randomBytes(32).toString('base64url'), 
+      });
+  
+      user.currentChallenge = (await options).challenge;
+      await this.userService.update(user);
+  
+      return options;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        errorCode: 'OPTIONS_GENERATION_FAILED',
+        message: 'Failed to generate authentication options.'
+      });
+    }
+  }  
+
+  // Verify WebAuthn authentication
+  async verifyAuthentication(body: AuthenticationResponseJSON & { email: string }, res: Response) {
+    const { email, ...webAuthnResponse } = body;
+
+    try {
+      const user = await this.userService.findByEmail(email);
+      if (!user || !user.webAuthnCredentials) {
+        throw new NotFoundException('User or user credentials not found.');
+      }
+
+      const authenticator = user.webAuthnCredentials;
+      if (!crypto.timingSafeEqual(authenticator.credentialID, Buffer.from(webAuthnResponse.rawId, 'base64url'))) {
+        throw new NotFoundException('Authenticator not registered.');
+      }
+
+      const verification = await verifyAuthenticationResponse({
+        response: webAuthnResponse,
+        expectedChallenge: user.currentChallenge,
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost',
+        credential: {
+          id: authenticator.credentialID.toString('base64url'),
+          publicKey: authenticator.publicKey,
+          counter: authenticator.counter,
+        },
+        requireUserVerification: true,
+      });
+
+      if (!verification.verified) {
+        throw new BadRequestException('Authentication verification failed.');
+      }
+
+      authenticator.counter = verification.authenticationInfo.newCounter;
+
+      user.currentChallenge = null;
+      await this.userService.update(user);
+
+      res.cookie('Token', this.generateJwt(user).access_token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict', 
+        expires: new Date(Date.now() + 3600000),  
+      });
+
+      res.status(200).json({
+        message: 'Authentication verified successfully!',
+        verified: true,
+      });
+
+    } catch (error) {
+      if (error.response) {
+        throw new BadRequestException(error.response);
+      }
+      throw new InternalServerErrorException('Failed to verify authentication.');
+    }
+  }  
+}
+

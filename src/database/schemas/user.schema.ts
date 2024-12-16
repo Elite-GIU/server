@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
-@Schema({ timestamps: { createdAt: 'created_at', updatedAt: false } })
+@Schema()
 export class User extends Document {
   @Prop({ required: true })
   name: string;
@@ -15,20 +15,54 @@ export class User extends Document {
   @Prop({ required: true, enum: ['admin', 'instructor', 'student'] })
   role: string;
 
-  @Prop({ type: [String], default: [], required: true })
+  @Prop({ type: [String], default: [] })
   preferences: string[];
 
-  @Prop({ default: false, required: true })
+  @Prop({ default: false })
   isEmailVerified: boolean;
 
-  @Prop({ required: false })
-  emailVerificationOtp: string;
+  @Prop()
+  emailVerificationOtp?: string;
 
-  @Prop({ required: false })
-  emailVerificationOtpCreatedAt: Date;
-  
-  @Prop({ required: false })
-  emailVerificationOtpExpiresAt: Date; 
+  @Prop()
+  emailVerificationOtpCreatedAt?: Date;
+
+  @Prop()
+  emailVerificationOtpExpiresAt?: Date;
+
+  @Prop()
+  currentChallenge?: string;
+
+  @Prop({
+    type: {
+      credentialID: { type: Buffer, required: true },
+      publicKey: { type: Buffer, required: true },
+      counter: { type: Number, required: true },
+      transports: { type: [String], required: true },
+    },
+    default: null
+  })
+  webAuthnCredentials: {
+    credentialID: Buffer;
+    publicKey: Buffer;
+    counter: number;
+    transports: string[];
+  };
+
+  @Prop()
+  biometricHash?: string;
+
+  @Prop({
+    type: [Number],
+    default: function (this: User) {
+      return this.role === 'instructor' ? [0, 0, 0, 0, 0] : undefined;
+    },
+    required: function (this: User) {
+      return this.role === 'instructor';
+    },
+  })
+  ratings: number[];
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
 import { User } from '../../database/schemas/user.schema';
 
@@ -12,15 +12,45 @@ export class StudentService {
   ) {}
 
   async getLearningPath(userId: string) {
+    // Validate user existence
     const user = await this.userModel.findById(userId);
-
     if (!user) throw new NotFoundException('User not found');
 
-    const courses = await this.courseModel
-      .find({
-        category: { $in: user.preferences },
-      })
-      .sort({ difficulty_level: 1 });
+    // Match courses based on user preferences and exclude already enrolled courses
+    const courses = await this.courseModel.aggregate([
+      {
+        $match: {
+          category: { $in: user.preferences }, // Match user preferences
+        },
+      },
+      {
+        $lookup: {
+          from: 'studentcourses', // Lookup from studentcourses collection
+          let: { courseId: '$_id' }, // Pass course `_id` to the pipeline
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$course_id', '$$courseId'] }, // Match course ID
+                    { $eq: ['$user_id', new Types.ObjectId(userId)] }, // Match student ID
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'enrollments', 
+        },
+      },
+      {
+        $match: {
+          enrollments: { $size: 0 }, // Exclude already enrolled courses
+        },
+      },
+      {
+        $sort: { difficulty_level: 1 }, // Sort by difficulty level
+      },
+    ]);
 
     return courses;
   }

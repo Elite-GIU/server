@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { User } from '../../database/schemas/user.schema';
 import { CreateUserDto } from './dto/CreateUserDto';
 import { UpdateUserDto } from './dto/UpdateUserDto';
@@ -47,7 +47,20 @@ export class UserService {
     };
     return myProfile;
   }
+  
+  async getName(userId: string): Promise<string> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      return '';
+    }
+    return user.name;
+  }
 
+  async getInstructorName(userId: string): Promise<string> {
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    const user = await this.userModel.findById(userIdObj).exec();
+    return user.name;
+  }
   // Method to get user profile by ID
   async getMyProfile(userId: string): Promise<MyProfileDto | null> {
     const user = await this.userModel.findById(userId).exec();
@@ -68,4 +81,18 @@ export class UserService {
     return myProfile;
   }
 
+
+  // Update a user's details (generic)
+  async update(user: User): Promise<User> {
+    const updatedUser = await this.userModel.findByIdAndUpdate(user._id, user, { new: true }).exec();
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+    return updatedUser;
+  }
+
+  async findById(userId: string): Promise<User | null> {
+      const userIdObj = new mongoose.Types.ObjectId(userId);
+      return this.userModel.findById(userIdObj).exec();
+  }
 }

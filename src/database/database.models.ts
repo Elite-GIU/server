@@ -1,6 +1,7 @@
 import { MongooseModule } from '@nestjs/mongoose';
 import { Content, ContentSchema } from './schemas/content.schema';
 import { Course, CourseSchema } from './schemas/course.schema';
+import { CourseArchive, CourseArchiveSchema } from './schemas/course.archive.schema';
 import { Log, LogSchema } from './schemas/log.schema';
 import { ModuleEntity, ModuleSchema } from './schemas/module.schema';
 import {
@@ -49,4 +50,5 @@ export const DatabaseModels = MongooseModule.forFeature([
   { name: ThreadMessageReply.name, schema: ThreadMessageReplySchema },
   { name: User.name, schema: UserSchema },
   { name: StudyRoom.name, schema: StudyRoomSchema },
+  { name: CourseArchive.name, schema: CourseArchiveSchema}
 ]);

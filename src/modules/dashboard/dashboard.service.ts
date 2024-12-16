@@ -261,7 +261,7 @@ export class DashboardService {
     return this.calculateAverage(grades);
   }
 
-  private async getHighestStudentQuizzesByCourse(userId: string, courseId: string) {
+  public async getHighestStudentQuizzesByCourse(userId: string, courseId: string) {
     const modules = await this.modulesModel.find(
       { course_id: new Types.ObjectId(courseId) },
       { _id: 1 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
@@ -16,6 +16,28 @@ export class UserController {
   return { role };
   }
 
+  @Get('name')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the name of the currently authenticated user' })
+  @ApiResponse({ status: 200, description: 'The name of the currently authenticated user' })
+  @ApiResponse({ status: 404, description: 'Name not found' })
+  async getName(@GetUser('userId') userId: string) {
+    return await this.userService.getName(userId);
+  }
+
+  @Get('instructor-name/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the name of the currently authenticated instructor' })
+  @ApiResponse({ status: 200, description: 'The name of the currently authenticated instructor' })
+  @ApiResponse({ status: 404, description: 'Name not found' })
+  async getInstructorName(@Param('userId') userId: string) {
+    return await this.userService.getInstructorName(userId);
+  }
+
+  
+  
   @Put('my-profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
