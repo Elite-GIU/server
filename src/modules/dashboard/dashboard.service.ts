@@ -50,7 +50,8 @@ export class DashboardService {
         grade: quiz.score,
         courseName: quiz.module_id?.course_id?.title,  
         moduleName: quiz.module_id?.title,  
-        dateTaken: quiz.createdAt,  
+        dateTaken: quiz.createdAt, 
+        finalGrade: quiz.finalGrade
     }));
   }
   
