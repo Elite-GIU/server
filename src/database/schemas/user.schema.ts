@@ -63,6 +63,8 @@ export class User extends Document {
   })
   ratings: number[];
 
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

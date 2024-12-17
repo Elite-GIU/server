@@ -245,6 +245,14 @@ export class AuthService {
         });
       }
 
+      if(user.isActive === false) {
+        throw new UnauthorizedException({
+          statusCode: 401,
+          errorCode: 'USER_DELETED',
+          message: 'User is deleted.',
+        });
+      }
+
       const jwtToken = this.generateJwt(user);
 
       response.cookie('Token', jwtToken.access_token, {
