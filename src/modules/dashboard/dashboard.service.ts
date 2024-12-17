@@ -161,6 +161,7 @@ export class DashboardService {
       const studentCompletedCourse = await this.studentCourseModel.countDocuments({ course_id: course._id, completion_percentage: 100 });
       const segmentedStudents = await this.segmentStudentsPerCourse(course._id);
       const averageGrade = await this.getCourseAverageGrade(course._id);
+      const averageRate = await this.calculateAverageRatings(course.ratings||[]);
 
       courseDetails.push({
         courseId: course._id,
@@ -170,6 +171,7 @@ export class DashboardService {
         studentsCompletedCourse: studentCompletedCourse,
         averageGrade: averageGrade,
         performanceMetrics: segmentedStudents,
+        averageRatings: averageRate
       });
     }
   
@@ -211,6 +213,7 @@ export class DashboardService {
       const quizzes = await this.quizResponseModel.find({ module_id: module._id });
 
       const grades = quizzes.map((quiz) => quiz.score);
+      const ratings = module.ratings || [];
 
       moduleDetails.push({
         moduleId: module._id,
@@ -218,11 +221,21 @@ export class DashboardService {
         averageGrade: this.calculateAverage(grades),
         bestGrade: Math.max(...grades),
         lowestGrade: Math.min(...grades),
+        averageRating: this.calculateAverageRatings(ratings),
       });
     }
   
     return moduleDetails;
   }
+
+  public calculateAverageRatings(votes: number[]): number {
+    const totalVotes = votes.reduce((sum, count) => sum + count, 0);
+    if (totalVotes === 0) return 0;
+  
+    const weightedSum = votes.reduce((sum, count, index) => sum + count * (index + 1), 0);
+    return parseFloat((weightedSum / totalVotes).toFixed(2));
+  }
+  
 
   async getCourseAverageGrade(courseId: string) {
     try {
