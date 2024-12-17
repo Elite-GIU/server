@@ -111,19 +111,29 @@ export class CourseController {
         return await this.courseService.updateInstructorCourse(updateCourseDto, course.instructor_id, course._id);
     }
 
-
+  @ApiQuery({ 
+    name: 'status', 
+    required: false, 
+    type: String, 
+    description: 'Sort order of the modules (asc or desc)',
+  })
   @Get('student/courses')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, StudentGuard)
-  @ApiOperation({ summary: 'Get all courses for the authenticated student' })
+  @ApiOperation({ summary: 'Get courses for the authenticated student' })
   @ApiResponse({
     status: 200,
     description: 'List of courses for the student retrieved successfully.',
+
   })
   @ApiResponse({ status: 404, description: 'No courses found for this student.' })
   getStudentCourses(
-    @GetUser('userId') userId: string
+    @GetUser('userId') userId: string,
+    @Query('status') status?: string | null,
   ) {
+    if (status){
+      return this.courseService.getStudentCoursesByStatus(userId, status);
+    }
     return this.courseService.getStudentCourses(userId);
   }
 
@@ -181,18 +191,6 @@ export class CourseController {
         'Failed to assign student to course: ' + error.message,
       );
     }
-  }
-  @Get('student/courses/status/:status')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, StudentGuard)
-  @ApiOperation({ summary: 'Get student courses filtered by status' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of student courses by status retrieved successfully.',
-  })
-  @ApiResponse({ status: 404, description: 'No courses found with the specified status.' })
-  getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
-    return this.courseService.getStudentCoursesByStatus(userId, status);
   }
 
   @Post('student/courses/:id/rate')
