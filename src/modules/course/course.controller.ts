@@ -192,18 +192,6 @@ export class CourseController {
       );
     }
   }
-  // @Get('student/courses/')
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard, StudentGuard)
-  // @ApiOperation({ summary: 'Get student courses filtered by status' })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'List of student courses by status retrieved successfully.',
-  // })
-  // @ApiResponse({ status: 404, description: 'No courses found with the specified status.' })
-  // getStudentCoursesByStatus(@GetUser('userId') userId: string, @Param('status') status: string) {
-  //   return this.courseService.getStudentCoursesByStatus(userId, status);
-  // }
 
   @Post('student/courses/:id/rate')
   @ApiBearerAuth()
