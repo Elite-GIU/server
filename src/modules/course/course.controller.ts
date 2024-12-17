@@ -37,7 +37,7 @@ export class CourseController {
   @ApiQuery({
     name: 'name',
     required: false,
-    description: 'The name of the course to search for (case-insensitive)',
+    description: 'The name of the course to search for (case-insensitive) or keyword',
     example: 'Python',
   })
   @ApiQuery({

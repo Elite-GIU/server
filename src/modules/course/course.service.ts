@@ -32,8 +32,12 @@ export class CourseService {
     const query: Record<string, any> = {};
 
     if (name) {
-      query.title = { $regex: name, $options: 'i' }; // Case-insensitive name match
+      query.$or = [
+      { title: { $regex: name, $options: 'i' } }, // Case-insensitive name match
+      { keywords: { $regex: name, $options: 'i' } } // Case-insensitive match in keywords array
+      ];
     }
+    
     if (instructorName) {
       const instructors = await this.userModel.find({ name: { $regex: instructorName, $options: 'i' } });
       if (!instructors || instructors.length === 0) throw new NotFoundException('Instructor not found');
