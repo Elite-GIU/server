@@ -90,7 +90,7 @@ export class ModuleController {
     return await this.moduleService.getInstructorModuleById(course._id, module._id);
   }
 
-  @Get('student/courses:courseId/modules/:moduleId')
+  @Get('student/courses/:courseId/modules/:moduleId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, StudentGuard)
   @ApiOperation({ summary: 'Get a specific module for a student' })
