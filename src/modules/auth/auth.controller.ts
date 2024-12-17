@@ -52,6 +52,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login' })
   @ApiResponse({ status: 200, description: 'User logged in successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'user deleted' })
   async login(@Body() userData: LoginUserDto, @Res() response: Response) {
     return this.authService.login(userData, response);
   }

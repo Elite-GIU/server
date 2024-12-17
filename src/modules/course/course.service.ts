@@ -65,7 +65,7 @@ export class CourseService {
       student = await this.userModel.findById(studentIdentifier);
     }
     if (!student) throw new NotFoundException('Student not found');
-  
+    if(!student.isActive) throw new ForbiddenException('Student is deleted');
     // Check if the student is already assigned to the course
     const existingAssignment = await this.studentCourseModel.findOne({
       course_id: course._id,

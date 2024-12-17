@@ -54,4 +54,13 @@ export class StudentService {
 
     return courses;
   }
+
+  async deleteStudent(userId: string) {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    user.isActive = false;
+    await user.save();
+  }
+
 }
