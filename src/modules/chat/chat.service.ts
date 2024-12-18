@@ -428,6 +428,7 @@ export class ChatService {
         creator_id: {
           name: user.name,
         },
+        createdAt: new Date(),
       };
       return {
         statusCode: HttpStatus.OK,
@@ -466,10 +467,22 @@ export class ChatService {
         content,
       });
       await this.threadMessageModel.create(message);
+      //Get the user name and put it in thread
+      const user = await this.userModel.findById(userId).select('name');
+
+      const data = {
+        ...message.toObject(),
+        sender_id: {
+          name: user.name,
+        },
+        //Get current time
+        createdAt: new Date(),
+      };
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
-        data: message,
+        data: data,
       };
     } catch (error) {
       if (error instanceof HttpException) {
