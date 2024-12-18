@@ -420,10 +420,19 @@ export class ChatService {
       });
 
       await this.threadModel.create(thread);
+      //Get the user name and put it in thread
+      const user = await this.userModel.findById(creator_id).select('name');
+
+      const data = {
+        ...thread.toObject(),
+        creator_id: {
+          name: user.name,
+        },
+      };
       return {
         statusCode: HttpStatus.OK,
         message: 'Thread created successfully',
-        data: thread,
+        data: data,
       };
     } catch (error) {
       if (error instanceof HttpException) {
