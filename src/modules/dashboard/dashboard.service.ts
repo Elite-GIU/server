@@ -221,8 +221,8 @@ export class DashboardService {
         moduleId: module._id,
         moduleName: module.title,
         averageGrade: this.calculateAverage(grades),
-        bestGrade: Math.max(...grades),
-        lowestGrade: Math.min(...grades),
+        bestGrade: grades.length > 0 ? Math.max(...grades) : 0,
+        lowestGrade: grades.length > 0 ? Math.min(...grades) : 0,
         averageRating: this.calculateAverageRatings(ratings),
       });
     }
