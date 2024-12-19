@@ -175,7 +175,7 @@ export class ChatService {
         );
       }
       let { title, description, members_list } = roomData;
-      members_list= [...members_list, userId];
+      members_list = [...members_list, userId];
       const validMembers = await this.checkMembers(members_list, course_id);
       if (!validMembers) {
         throw new HttpException(
@@ -428,26 +428,7 @@ export class ChatService {
       );
     }
   }
-  async getMembers(user_id: string, course_id: string) {
-    const enrolled = await this.isAssociatedWithCourse(user_id, course_id);
-    if (!enrolled) {
-      throw new HttpException(
-        'You are not associated with this course',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-    const members = await this.studentCourseModel
-      .find({
-        course_id: new Types.ObjectId(course_id),
-      })
-      .populate('user_id', 'name email')
-      .select('user_id');
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'Members fetched successfully',
-      data: members,
-    };
-  }
+
   async getMembersList(course_id: string) {
     return await this.studentCourseModel
       .find({
@@ -743,7 +724,14 @@ export class ChatService {
     });
   }
 
-  async getStudentsList(course_id: string) {
+  async getStudentsList(user_id: string, course_id: string) {
+    const enrolled = await this.isAssociatedWithCourse(user_id, course_id);
+    if (!enrolled) {
+      throw new HttpException(
+        'You are not associated with this course',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
     const members = await this.studentCourseModel
       .find({
         course_id: new Types.ObjectId(course_id),
@@ -755,14 +743,12 @@ export class ChatService {
     const activeUsers = await this.userModel
       .find({
         _id: { $in: userIds },
-        isActive: true, 
+        isActive: true,
       })
-      .select('name _id'); 
-
+      .select('name _id');
     return activeUsers.map((user) => ({
       user_id: user._id,
       name: user.name,
     }));
   }
-
 }
