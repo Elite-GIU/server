@@ -25,6 +25,7 @@ import { ExistParam } from 'src/common/decorators/existParam.decorator';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
 import { AddRatingDto } from './dto/AddRatingDto';
+import { AdminGuard } from 'src/common/guards/admin.guard';
 
 @ApiTags('Courses')
 @Controller()
@@ -226,6 +227,19 @@ export class CourseController {
   }, CheckAssignedValidatorPipe) course : {instructor_id: string, _id: string}){
       
       return await this.courseService.deleteInstructorCourse(id, userId);   
+
+  }
+
+  @Delete('admin/courses/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin deletes a course'})
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  async deleteCourseByAdmin(@Param('id') id : string, @GetUser('userId') userId: string,
+  @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe) course: { id: string, modelName: string },
+){
+      
+      return await this.courseService.deleteCourse(course.id);   
 
   }
 }

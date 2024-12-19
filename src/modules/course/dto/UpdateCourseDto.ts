@@ -29,4 +29,9 @@ export class UpdateCourseDto {
   @IsOptional()
   @IsArray({ message: 'keywords must be an array of string' })
   keywords?: Array<string>;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  image_path?: string
 }
