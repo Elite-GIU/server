@@ -208,6 +208,24 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
     return deleted;
   }
 
+  async deleteCourse(id: string){
+
+    const course = await this.courseModel.findById(id);
+
+    if(!course)
+      throw new Error('Course not found');
+
+    const newCourse = course.toObject();
+
+    delete newCourse._id;
+
+    await this.courseArchiveModel.create({...newCourse, instructor_id: course.instructor_id});
+
+    const deleted = await this.courseModel.findByIdAndDelete(id);
+
+    return deleted;
+  }
+
   async rateCourse(courseId: string, ratingDto: AddRatingDto) {
     const { course_rate, instructor_rate } = ratingDto;
 
