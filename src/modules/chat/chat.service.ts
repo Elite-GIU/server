@@ -491,10 +491,18 @@ export class ChatService {
         `You have a new ${type} in ${courseName} from ${name}: ${title}`,
         'thread',
       );
+
+      const data = {
+        ...thread.toObject(),
+        creator_id: {
+          name: name,
+        },
+        createdAt: new Date(),
+      };
       return {
         statusCode: HttpStatus.OK,
         message: 'Thread created successfully',
-        data: thread,
+        data: data,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -540,10 +548,19 @@ export class ChatService {
         'thread',
       );
 
+      const data = {
+        ...message.toObject(),
+        sender_id: {
+          name: name,
+        },
+        //Get current time
+        createdAt: new Date(),
+      };
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
-        data: message,
+        data: data,
       };
     } catch (error) {
       if (error instanceof HttpException) {
