@@ -16,6 +16,10 @@ export class RoleGuard implements CanActivate {
     if (this.allowAdminBypass && user.role === 'admin') {
       return true;
     }
+    
+    if(user.isActive === false) {
+      throw new ForbiddenException('User is deleted');
+    }
 
     if (this.allowedRoles.includes(user.role)) {
       return true;

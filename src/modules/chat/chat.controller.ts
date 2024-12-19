@@ -132,6 +132,22 @@ export class ChatController {
     );
   }
 
+  // Get possible members to add to a study room
+  @Get('study-room/courses/:id/members')
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiOperation({ summary: 'Get possible members to add to a study room' })
+  @ApiResponse({ status: 200, description: 'Members fetched successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid course ID' })
+  async getPossibleMembers(
+    @GetUser('userId') userId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
+    course: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+    return this.chatService.getMembers(userId, course.id);
+  }
   // Create a study room
   @Post('study-room/courses/:courseId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
@@ -341,6 +357,7 @@ export class ChatController {
   @ApiResponse({ status: 400, description: 'Invalid ID' })
   async postThread(
     @GetUser('userId') userId: string,
+    @GetUser('role') role: string,
     @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
     course: {
       id: string;
@@ -348,7 +365,7 @@ export class ChatController {
     },
     @Body() threadData: ThreadDto,
   ) {
-    return this.chatService.postThread(userId, course.id, threadData);
+    return this.chatService.postThread(userId, role, course.id, threadData);
   }
 
   // Send a message in a thread

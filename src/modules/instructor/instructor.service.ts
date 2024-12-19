@@ -29,13 +29,22 @@ export class InstructorService {
       .limit(limit);
     //remove everything except name and email and preferences in the response , convert the response to InstructorDataDto
     const filteredInstructors = instructors.map(instructor => {
-      const { name, email, preferences } = instructor;
-      return { name, email, preferences };
+      const { name, email, preferences, ratings = [] } = instructor;
+      const averageRating = this.calculateAverageRatings(ratings);
+      return { name, email, preferences, averageRating };
     });
     if (!instructors || instructors.length === 0) {
       throw new NotFoundException('No instructors found');
     }
 
     return filteredInstructors;
+  }
+
+  public calculateAverageRatings(votes: number[]): number {
+    const totalVotes = votes.reduce((sum, count) => sum + count, 0);
+    if (totalVotes === 0) return 0;
+  
+    const weightedSum = votes.reduce((sum, count, index) => sum + count * (index + 1), 0);
+    return parseFloat((weightedSum / totalVotes).toFixed(2));
   }
 }

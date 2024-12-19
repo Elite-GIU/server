@@ -32,8 +32,12 @@ export class CourseService {
     const query: Record<string, any> = {};
 
     if (name) {
-      query.title = { $regex: name, $options: 'i' }; // Case-insensitive name match
+      query.$or = [
+      { title: { $regex: name, $options: 'i' } }, // Case-insensitive name match
+      { keywords: { $regex: name, $options: 'i' } } // Case-insensitive match in keywords array
+      ];
     }
+    
     if (instructorName) {
       const instructors = await this.userModel.find({ name: { $regex: instructorName, $options: 'i' } });
       if (!instructors || instructors.length === 0) throw new NotFoundException('Instructor not found');
@@ -65,7 +69,7 @@ export class CourseService {
       student = await this.userModel.findById(studentIdentifier);
     }
     if (!student) throw new NotFoundException('Student not found');
-  
+    if(!student.isActive) throw new ForbiddenException('Student is deleted');
     // Check if the student is already assigned to the course
     const existingAssignment = await this.studentCourseModel.findOne({
       course_id: course._id,
