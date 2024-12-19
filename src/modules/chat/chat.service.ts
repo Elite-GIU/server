@@ -75,7 +75,7 @@ export class ChatService {
         .find({
           course_id: new Types.ObjectId(course_id),
         })
-        .sort({ createdAt: 1 });
+        .sort({ createdAt: -1 });
       return {
         statusCode: HttpStatus.OK,
         message: 'Rooms fetched successfully',
@@ -335,7 +335,7 @@ export class ChatService {
           path: 'creator_id',
           select: 'name role',
         })
-        .sort({ createdAt: 1 });
+        .sort({ createdAt: -1 });
 
       if (!threads) {
         return {
@@ -377,7 +377,7 @@ export class ChatService {
           thread_id: new Types.ObjectId(thread_id),
         })
         .populate('sender_id', 'name role')
-        .sort({ createdAt: 1 });
+        .sort({ createdAt: -1 });
       return {
         statusCode: HttpStatus.OK,
         message: 'Messages fetched successfully',
@@ -412,7 +412,7 @@ export class ChatService {
           message_id: new Types.ObjectId(message_id),
         })
         .populate('sender_id', 'name role')
-        .sort({ createdAt: 1 });
+        .sort({ createdAt: -1 });
       return {
         statusCode: HttpStatus.OK,
         message: 'Replies fetched successfully',
