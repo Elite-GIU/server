@@ -5,15 +5,19 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swag
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiTags } from '@nestjs/swagger';
+import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
+import { ExistParam } from 'src/common/decorators/existParam.decorator';
+import { AdminGuard } from 'src/common/guards/admin.guard';
 
 @Controller()
-@UseGuards(JwtAuthGuard, StudentGuard)
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @ApiTags('Students')
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
 
   @Get('student/learning-path')
-  @ApiBearerAuth()
+  @UseGuards(StudentGuard)
   @ApiOperation({ summary: 'Get learning path for the authenticated student' })
   @ApiResponse({
     status: 200,
@@ -26,15 +30,26 @@ export class StudentController {
 
   
   @Delete('student')
-  @ApiBearerAuth()
+  @UseGuards(StudentGuard)
   @ApiOperation({ summary: 'Delete the authenticated student' })
   @ApiResponse({
     status: 200,
     description: 'Student deleted successfully.',
   })
   @ApiResponse({ status: 404, description: 'Student not found.' })
-  deleteStudent(@GetUser('userId') userId: string) {
+  deleteStudentSelf(@GetUser('userId') userId: string) {
     return this.studentService.deleteStudent(userId);
   }
 
+  @Delete('student/:id')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Admin delete student' })
+  @ApiResponse({ status: 200,description: 'Student deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Student not found.' })
+  @ApiParam({ name: 'id', required: true, description: 'User ID' })
+  deleteStudent(
+    @ExistParam({ idKey: 'id', modelName: 'User' }, CheckExistValidatorPipe) user: { id: string, modelName: string },
+    @GetUser('userId') userId: string) {
+    return this.studentService.deleteStudent(user.id);
+  }
 }

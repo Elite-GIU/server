@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
@@ -57,10 +57,16 @@ export class StudentService {
 
   async deleteStudent(userId: string) {
     const user = await this.userModel.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user || user.role!='student' || user.isActive==false) 
+      throw new NotFoundException('Student not found');
 
     user.isActive = false;
     await user.save();
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Student deleted successfully',
+    };
   }
 
 }
