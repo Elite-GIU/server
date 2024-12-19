@@ -28,4 +28,9 @@ export class CreateCourseDto {
     @ApiProperty()
     @IsArray({ message: 'keywords must be an array of string' })
     keywords?: Array<string>;
+
+    @ApiProperty()
+    @IsNotEmpty()
+    @IsString()
+    image_path: string;
 }
