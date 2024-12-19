@@ -123,8 +123,7 @@ export class DashboardService {
     const allStudents = await this.studentCourseModel
       .find({ course_id: new Types.ObjectId(courseId) })
       .populate('user_id');
-    
-    const activeStudents = allStudents.filter(student => student.isActive);
+    const activeStudents = allStudents.filter(student => student.user_id.isActive === true);
 
     const filteredStudents = name
       ? activeStudents.filter(student =>
