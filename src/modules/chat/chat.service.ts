@@ -174,7 +174,8 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const { title, description, members_list } = roomData;
+      let { title, description, members_list } = roomData;
+      members_list = [...members_list, userId];
       const validMembers = await this.checkMembers(members_list, course_id);
       if (!validMembers) {
         throw new HttpException(
@@ -427,26 +428,7 @@ export class ChatService {
       );
     }
   }
-  async getMembers(user_id: string, course_id: string) {
-    const enrolled = await this.isAssociatedWithCourse(user_id, course_id);
-    if (!enrolled) {
-      throw new HttpException(
-        'You are not associated with this course',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-    const members = await this.studentCourseModel
-      .find({
-        course_id: new Types.ObjectId(course_id),
-      })
-      .populate('user_id', 'name email')
-      .select('user_id');
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'Members fetched successfully',
-      data: members,
-    };
-  }
+
   async getMembersList(course_id: string) {
     return await this.studentCourseModel
       .find({
@@ -740,5 +722,33 @@ export class ChatService {
       message: message,
       type: type,
     });
+  }
+
+  async getStudentsList(user_id: string, course_id: string) {
+    const enrolled = await this.isAssociatedWithCourse(user_id, course_id);
+    if (!enrolled) {
+      throw new HttpException(
+        'You are not associated with this course',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    const members = await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .select('user_id');
+
+    const userIds = members.map((member) => member.user_id);
+
+    const activeUsers = await this.userModel
+      .find({
+        _id: { $in: userIds },
+        isActive: true,
+      })
+      .select('name _id');
+    return activeUsers.map((user) => ({
+      user_id: user._id,
+      name: user.name,
+    }));
   }
 }

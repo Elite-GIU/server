@@ -132,22 +132,6 @@ export class ChatController {
     );
   }
 
-  // Get possible members to add to a study room
-  @Get('study-room/courses/:id/members')
-  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
-  @ApiOperation({ summary: 'Get possible members to add to a study room' })
-  @ApiResponse({ status: 200, description: 'Members fetched successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid course ID' })
-  async getPossibleMembers(
-    @GetUser('userId') userId: string,
-    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
-    course: {
-      id: string;
-      modelName: string;
-    },
-  ) {
-    return this.chatService.getMembers(userId, course.id);
-  }
   // Create a study room
   @Post('study-room/courses/:courseId')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
@@ -516,5 +500,22 @@ export class ChatController {
       thread.course_id,
       thread._id,
     );
+  }
+
+  // Get possible members to add to a study room
+  @Get('study-room/courses/:id/members')
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiOperation({ summary: 'Get members of a course' })
+  @ApiResponse({ status: 200, description: 'Members fetched successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid course ID' })
+  async getStudentsList(
+    @GetUser('userId') userId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
+    course: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+    return this.chatService.getStudentsList(userId, course.id);
   }
 }
