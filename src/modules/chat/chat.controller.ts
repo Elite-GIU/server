@@ -517,4 +517,23 @@ export class ChatController {
       thread._id,
     );
   }
+
+  //////////////////////// not an actual endpoint, just for dropdown
+
+  @Get('study-room/courses/:id/members')
+  @ApiParam({ name: 'id', required: true, description: 'Course ID' })
+  @ApiOperation({ summary: 'Get threads of a course' })
+  @ApiResponse({ status: 200, description: 'Threads fetched successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid course ID' })
+  async getStudentsList(
+    @GetUser('userId') userId: string,
+    @ExistParam({ idKey: 'id', modelName: 'Course' }, CheckExistValidatorPipe)
+    course: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+    return this.chatService.getStudentsList(course.id);
+  }
+
 }

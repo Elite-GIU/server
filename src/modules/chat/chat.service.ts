@@ -174,7 +174,8 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const { title, description, members_list } = roomData;
+      let { title, description, members_list } = roomData;
+      members_list= [...members_list, userId];
       const validMembers = await this.checkMembers(members_list, course_id);
       if (!validMembers) {
         throw new HttpException(
@@ -741,4 +742,27 @@ export class ChatService {
       type: type,
     });
   }
+
+  async getStudentsList(course_id: string) {
+    const members = await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .select('user_id');
+
+    const userIds = members.map((member) => member.user_id);
+
+    const activeUsers = await this.userModel
+      .find({
+        _id: { $in: userIds },
+        isActive: true, 
+      })
+      .select('name _id'); 
+
+    return activeUsers.map((user) => ({
+      user_id: user._id,
+      name: user.name,
+    }));
+  }
+
 }
