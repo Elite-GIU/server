@@ -324,4 +324,18 @@ export class ModuleService {
     );
     return updatedModule;
   }
+
+  async getContent(contentId: string, moduleId: string) {
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const contentIdObject = new Types.ObjectId(contentId);
+    const content = await this.contentModel.findById(contentIdObject);
+    const module = await this.moduleModel.findById(moduleIdObject);
+
+    if (!content) throw new NotFoundException('Content not found');
+    if(!module.content.includes(contentIdObject)) throw new NotFoundException("Content not found");
+    if(!content.isVisible) throw new NotFoundException("Content not found");
+
+    return content;
+  }
+  //eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzYxMjE2NTI0OTYxNWMyODllZWFhNzUiLCJlbWFpbCI6ImtpbWJlcmx5bG9nYW5AZXhhbXBsZS5uZXQiLCJyb2xlIjoic3R1ZGVudCIsImlhdCI6MTczNDYzMzE3MSwiZXhwIjoxNzM0NjM2NzcxfQ.o09TkseQ3r03owNaQahuNUOG6N9V27yaBbab-_3A42Q
 }

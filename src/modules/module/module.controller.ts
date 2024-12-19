@@ -18,6 +18,7 @@ import { createReadStream } from 'fs';
 import { Response } from 'express';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 import { RateModuleDto } from './dto/RateModuleDto';
+import { Types } from 'mongoose';
 
 @ApiTags('Modules')
 @Controller()
@@ -379,5 +380,50 @@ export class ModuleController {
     }, CheckAssignedValidatorPipe) {course_id}: {course_id: string}
   ) {
     return await this.moduleService.rateModule(module._id, rateModuleDto.rate);
+  }
+
+  @Get("student/courses/:courseId/modules/:moduleId/content/:contentId")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, StudentGuard)
+@ApiOperation({ summary: 'Get content of a specific module of a course' })
+@ApiResponse({ status: 200, description: 'Content retrieved successfully.' })
+@ApiResponse({ status: 404, description: 'Content not found.' })
+@ApiParam({ name: "courseId", description: "ID of the course", type: String })
+@ApiParam({ name: "moduleId", description: "ID of the module", type: String })
+@ApiParam({ name: "contentId", description: "ID of the content", type: String })
+async getContent(
+  @GetUser('userId') userId: string, 
+    @AssignedParam(
+      {
+      modelName: 'StudentCourse', 
+      firstAttrName: 'user_id', 
+      secondAttrName: 'course_id', 
+      firstKey: 'userId', 
+      secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+      modelName: 'ModuleEntity',
+      firstAttrName: 'course_id',
+      secondAttrName: '_id',
+      firstKey: 'courseId',
+      secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string},
+    @ExistParam(
+      { idKey: 'contentId', modelName: 'Content' },
+      CheckExistValidatorPipe,
+    )
+    content: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+
+    const fetchedContent = await this.moduleService.getContent(content.id, module._id);
+    return fetchedContent;
   }
 }
