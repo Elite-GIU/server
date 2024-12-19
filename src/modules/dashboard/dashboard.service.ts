@@ -130,19 +130,31 @@ export class DashboardService {
           student.user_id.name.toLowerCase().includes(name.toLowerCase())
         )
       : activeStudents;
+
+    const totalStudents = filteredStudents.length;
+    const totalPages = Math.ceil(totalStudents / limit);
     
     const paginatedStudents = filteredStudents.slice(
       (page - 1) * limit,
       page * limit
     );
-  
+    
     const studentsPromise = paginatedStudents.map(async student => ({
       studentId: student.user_id._id,
       studentName: student.user_id.name,
       averageGrade: await this.calculateAverageGrade(student.user_id._id, courseId),
     }));
-  
-    return await Promise.all(studentsPromise);
+
+    const students = await Promise.all(studentsPromise);
+
+    return {
+      students,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalStudents,
+      },
+    };
   }
   
 
