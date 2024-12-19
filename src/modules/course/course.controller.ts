@@ -138,7 +138,7 @@ export class CourseController {
     return this.courseService.getStudentCourses(userId);
   }
 
-  @Get('student/courses/:id/modules')
+  @Get('student/courses/:id') //removed the module 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, StudentGuard) 
   @ApiOperation({ summary: 'Get course details with modules for the authenticated student' })
