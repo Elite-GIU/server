@@ -72,6 +72,7 @@ export class ModuleService {
         nrOfQuestions: module.numberOfQuestions,
         assessmentType: module.assessmentType,
         passingGrade: module.passingGrade,
+        _id: module._id
       })),
     );
   }

@@ -21,4 +21,8 @@ export class GetModuleDto {
   @IsNumber()
   @IsNotEmpty()
   passingGrade: number;
+
+  @IsString()
+  @IsNotEmpty()
+  _id: Types.ObjectId;
 }
