@@ -251,8 +251,35 @@ export class ChatController {
   ) {
     return this.chatService.getCourseThreads(userId, course.id, title);
   }
-  // Get specific thread messages
+
+  // Get specific thread
   @Get('forums/courses/:courseId/threads/:threadId')
+  @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
+  @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
+  @ApiOperation({ summary: 'Get specific thread' })
+  @ApiResponse({ status: 200, description: 'Thread fetched successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid ID' })
+  async getThread(
+    @GetUser('userId') userId: string,
+    @AssignedParam(
+      {
+        modelName: 'Thread',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'threadId',
+      },
+      CheckAssignedValidatorPipe,
+    )
+    thread: {
+      _id: string;
+      course_id: string;
+    },
+  ) {
+    return this.chatService.getThread(userId, thread.course_id, thread._id);
+  }
+  // Get specific thread messages
+  @Get('forums/courses/:courseId/threads/:threadId/messages')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
   @ApiOperation({ summary: 'Get specific thread messages' })
@@ -353,7 +380,7 @@ export class ChatController {
   }
 
   // Send a message in a thread
-  @Post('forums/courses/:courseId/threads/:threadId')
+  @Post('forums/courses/:courseId/threads/:threadId/messages')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
   @ApiOperation({ summary: 'Send a message in a thread' })
@@ -469,7 +496,7 @@ export class ChatController {
   }
 
   // Delete a thread by student or course instructor
-  @Delete('forums/courses/:courseId/threads/:threadId/delete')
+  @Delete('forums/courses/:courseId/threads/:threadId/')
   @ApiParam({ name: 'courseId', required: true, description: 'Course ID' })
   @ApiParam({ name: 'threadId', required: true, description: 'Thread ID' })
   @ApiOperation({ summary: 'Delete a thread' })

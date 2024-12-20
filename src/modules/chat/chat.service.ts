@@ -326,18 +326,58 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const threads = await this.threadModel
-        .find({
-          course_id: new Types.ObjectId(course_id),
-          ...(title && { title: { $regex: new RegExp(title, 'i') } }),
-        })
-        .populate({
-          path: 'creator_id',
-          select: 'name role',
-        })
-        .sort({ createdAt: -1 });
-
-      if (!threads) {
+  
+      const threads = await this.threadModel.aggregate([
+        {
+          $match: {
+            course_id: new Types.ObjectId(course_id),
+            ...(title && { title: { $regex: new RegExp(title, 'i') } }),
+          },
+        },
+        {
+          $lookup: {
+            from: 'users', 
+            localField: 'creator_id',
+            foreignField: '_id',
+            as: 'creatorDetails',
+          },
+        },
+        {
+          $unwind: '$creatorDetails',
+        },
+        {
+          $lookup: {
+            from: 'threadmessages',
+            localField: '_id',
+            foreignField: 'thread_id',
+            as: 'messages',
+          },
+        },
+        {
+          $project: {
+            title: 1,
+            description: 1,
+            creator_id: {
+              _id: '$creatorDetails._id',
+              name: '$creatorDetails.name', 
+              role: {
+                $cond: {
+                  if: { $eq: ['$creatorDetails._id', new Types.ObjectId(userId)] },
+                  then: 'thread master',
+                  else: '$creatorDetails.role',
+                },
+              },
+            },
+            createdAt: 1,
+            messagesCount: { $size: '$messages' },
+          },
+        },
+        {
+          $sort: { createdAt: -1 },
+        },
+      ]);
+  
+      if (!threads.length) {
         return {
           statusCode: HttpStatus.OK,
           message: 'No threads found',
@@ -359,6 +399,90 @@ export class ChatService {
       );
     }
   }
+   
+  async getThread(userId: string, course_id: string, thread_id: string) {
+    try {
+      const enrolled = await this.isAssociatedWithCourse(userId, course_id);
+      if (!enrolled) {
+        throw new HttpException(
+          'You are not associated with this course',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+  
+      const thread = await this.threadModel.aggregate([
+        {
+          $match: {
+            _id: new Types.ObjectId(thread_id),
+            course_id: new Types.ObjectId(course_id),
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'creator_id',
+            foreignField: '_id',
+            as: 'creatorDetails',
+          },
+        },
+        {
+          $unwind: {
+            path: '$creatorDetails',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: 'threadmessages',
+            localField: '_id',
+            foreignField: 'thread_id',
+            as: 'messages',
+          },
+        },
+        {
+          $project: {
+            title: 1,
+            description: 1,
+            creator_id: {
+              _id: '$creatorDetails._id',
+              name: '$creatorDetails.name',
+              role: {
+                $cond: {
+                  if: { $eq: ['$creatorDetails._id', new Types.ObjectId(userId)] },
+                  then: 'thread master',
+                  else: '$creatorDetails.role',
+                },
+              },
+            },
+            createdAt: 1,
+            messagesCount: { $size: '$messages' },
+          },
+        },
+      ]);
+  
+      if (!thread.length) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Thread not found',
+          data: null,
+        };
+      }
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Thread fetched successfully',
+        data: thread[0], // Return the first (and only) thread
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+    
   async getThreadMessages(
     userId: string,
     course_id: string,
@@ -437,6 +561,79 @@ export class ChatService {
       .select('user_id');
   }
 
+  // async postThread(
+  //   creator_id: string,
+  //   role: string,
+  //   course_id: string,
+  //   threadData: ThreadDto,
+  // ) {
+  //   try {
+  //     const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
+  //     if (!enrolled) {
+  //       throw new HttpException(
+  //         'You are not associated with this course',
+  //         HttpStatus.UNAUTHORIZED,
+  //       );
+  //     }
+  //     const { title, description } = threadData;
+  //     const thread = new this.threadModel({
+  //       course_id: new Types.ObjectId(course_id),
+  //       creator_id: new Types.ObjectId(creator_id),
+  //       title,
+  //       description,
+  //     });
+
+  //     await this.threadModel.create(thread);
+  //     const { title: courseName } = await this.courseModel.findOne({
+  //       _id: new Types.ObjectId(course_id),
+  //     });
+  //     const { name } = await this.userModel.findOne({ _id: creator_id });
+  //     const type = role === 'instructor' ? 'Announcement' : 'Thread';
+  //     //Get student id list from course by id
+  //     const members_list = await this.getMembersList(course_id);
+  //     await this.sendNotification(
+  //       members_list,
+  //       `New ${type}`,
+  //       `You have a new ${type} in ${courseName} from ${name}: ${title}`,
+  //       'thread',
+  //     );
+
+  //     const data = {
+  //       ...thread.toObject(),
+  //       creator_id: {
+  //         name: name,
+  //       },
+  //       createdAt: new Date(),
+  //     };
+  //     return {
+  //       statusCode: HttpStatus.OK,
+  //       message: 'Thread created successfully',
+  //       data: data,
+  //     };
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new HttpException(
+  //       `Database error: ${error.message}`,
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
+
+  // return this structure 
+  // _id: string;
+  // course_id: string;
+  // title: string;
+  // creator_id: {
+  //   _id: string;
+  //   name: string;
+  //   role: string;
+  // };
+  // createdAt: string;
+  // description: string;
+  // messagesCount: number;
+
   async postThread(
     creator_id: string,
     role: string,
@@ -444,6 +641,7 @@ export class ChatService {
     threadData: ThreadDto,
   ) {
     try {
+      // Check if the user is associated with the course
       const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
       if (!enrolled) {
         throw new HttpException(
@@ -451,36 +649,53 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
+  
       const { title, description } = threadData;
+  
+      // Create a new thread
       const thread = new this.threadModel({
         course_id: new Types.ObjectId(course_id),
         creator_id: new Types.ObjectId(creator_id),
         title,
         description,
       });
-
+  
       await this.threadModel.create(thread);
-      const { title: courseName } = await this.courseModel.findOne({
+  
+      // Fetch additional details
+      const course = await this.courseModel.findOne({
         _id: new Types.ObjectId(course_id),
       });
-      const { name } = await this.userModel.findOne({ _id: creator_id });
+      const user = await this.userModel.findOne({ _id: creator_id });
+  
       const type = role === 'instructor' ? 'Announcement' : 'Thread';
-      //Get student id list from course by id
+  
+      // Get the list of course members
       const members_list = await this.getMembersList(course_id);
+  
+      // Send notification to course members
       await this.sendNotification(
         members_list,
         `New ${type}`,
-        `You have a new ${type} in ${courseName} from ${name}: ${title}`,
+        `You have a new ${type} in ${course.title} from ${user.name}: ${title}`,
         'thread',
       );
-
+  
+      // Build the response structure
       const data = {
-        ...thread.toObject(),
+        _id: thread._id.toString(),
+        course_id: course_id,
+        title: title,
         creator_id: {
-          name: name,
+          _id: user._id.toString(),
+          name: user.name,
+          role: creator_id === user._id.toString() ? 'thread master' : role, // Check if the creator is the current user
         },
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
+        description: description,
+        messagesCount: 0, // Newly created thread will have no messages
       };
+  
       return {
         statusCode: HttpStatus.OK,
         message: 'Thread created successfully',
@@ -496,6 +711,8 @@ export class ChatService {
       );
     }
   }
+  
+
   async sendMessageToThread(
     userId: string,
     course_id: string,
@@ -522,23 +739,21 @@ export class ChatService {
       const { title } = await this.threadModel.findOne({
         _id: new Types.ObjectId(thread_id),
       });
-      const { name } = await this.userModel.findOne({ _id: userId });
+      const { name, role } = await this.userModel.findOne({ _id: userId });
       await this.sendNotification(
         members_list,
         'New Message',
         `You have a new message in ${title} thread from ${name}: ${content}`,
         'thread',
       );
-
       const data = {
         ...message.toObject(),
         sender_id: {
           name: name,
+          role: role
         },
-        //Get current time
         createdAt: new Date(),
       };
-
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
@@ -554,6 +769,9 @@ export class ChatService {
       );
     }
   }
+
+
+  
   async replyToThreadMessage(
     userId: string,
     course_id: string,
@@ -589,10 +807,17 @@ export class ChatService {
         `You have a new reply in ${title} thread from ${name}: ${content}`,
         'thread',
       );
+      const data = {
+        ...reply.toObject(),
+        sender_id: {
+          name: name,
+        },
+        createdAt: new Date(),
+      };
       return {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
-        data: reply,
+        data: data,
       };
     } catch (error) {
       if (error instanceof HttpException) {
