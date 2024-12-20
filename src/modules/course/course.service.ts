@@ -28,7 +28,7 @@ export class CourseService {
    * @param instructorName Optional instructor name filter
    * @returns List of filtered courses with pagination.
    */
-  async getAllCourses(page: number, limit: number, name?: string, instructorName?: string): Promise<Course[]> {
+  async getAllCourses(page: number, limit: number, name?: string, instructorName?: string){
     const query: Record<string, any> = {};
 
     if (name) {
@@ -54,7 +54,16 @@ export class CourseService {
       throw new NotFoundException('No courses available');
     }
 
-    return courses;
+    const totalCourses = courses.length;
+    const totalPages = Math.ceil(totalCourses / limit);
+
+    return {courses,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCourses,
+      },
+    };
   }
 
   async assignStudentToCourse(courseId: string, studentIdentifier: string): Promise<StudentCourse> {
