@@ -54,9 +54,9 @@ export class CourseService {
       throw new NotFoundException('No courses available');
     }
 
-    const totalCourses = courses.length;
+    const totalCourses = await this.courseModel.countDocuments(query);
     const totalPages = Math.ceil(totalCourses / limit);
-
+    
     return {courses,
       pagination: {
         currentPage: page,
