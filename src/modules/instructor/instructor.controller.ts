@@ -31,13 +31,18 @@ export class InstructorController {
     status: 200,
     description: 'List of instructors successfully retrieved.',
     schema: {
-      example: [
+      example: {instuctors:[
         {
           name: 'John Doe',
           email: 'john.doe@example.com',
           preferences: ['Python', 'Java'],
         },
       ],
+      pagination: {
+        totalCourses: 1,
+        totalPages: 1,
+        currentPage: 1,
+      },}
     },
   })
   @ApiResponse({ status: 404, description: 'No instructors found.' })
