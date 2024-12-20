@@ -49,6 +49,14 @@ export class DashboardController {
   }
 
   @UseGuards(JwtAuthGuard, InstructorGuard)
+  @Get('instructor/analytics')
+  @ApiOperation({ summary: 'Get the instructor main page in dashboard' })
+  @ApiResponse({ status: 200, description: 'Dashboard returned successfully' })
+  async getInstructorMetrics(@GetUser('userId') instructorId: string) {
+    return this.dashboardService.getInstructorMetrics(instructorId);
+  }
+
+  @UseGuards(JwtAuthGuard, InstructorGuard)
   @Get('instructor/download')
   @ApiOperation({ summary: 'Get the instructor dashboard' })
   @ApiResponse({ status: 200, description: 'Dashboard returned successfully' })
