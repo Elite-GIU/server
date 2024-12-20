@@ -51,17 +51,25 @@ export class CourseController {
   @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
   @ApiResponse({
     status: 200,
-    description: 'List of courses successfully retrieved.',
+    description: 'List of courses successfully retrieved. with pagination details',
     schema: {
-      example: [
-        {
-          _id: '648a1e9b9f4e2d1a1b2c3d4e',
-          category: 'Programming',
-          description: 'Learn Python programming from scratch',
-          difficulty_level: 'Beginner',
+      example: {"courses": 
+          [
+          {
+            _id: '648a1e9b9f4e2d1a1b2c3d4e',
+            category: 'Programming',
+            description: 'Learn Python programming from scratch',
+            difficulty_level: 'Beginner',
+          },
+        ],
+        pagination: {
+          totalCourses: 1,
+          totalPages: 1,
+          currentPage: 1,
         },
-      ],
-    },
+      },
+    }
+
   })
   @ApiResponse({ status: 404, description: 'No courses found.' })
   async getAllCourses(
