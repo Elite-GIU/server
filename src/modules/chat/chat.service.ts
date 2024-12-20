@@ -635,83 +635,83 @@ export class ChatService {
   // messagesCount: number;
 
   async postThread(
-    creator_id: string,
-    role: string,
-    course_id: string,
-    threadData: ThreadDto,
-  ) {
-    try {
-      // Check if the user is associated with the course
-      const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
-      if (!enrolled) {
-        throw new HttpException(
-          'You are not associated with this course',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-  
-      const { title, description } = threadData;
-  
-      // Create a new thread
-      const thread = new this.threadModel({
-        course_id: new Types.ObjectId(course_id),
-        creator_id: new Types.ObjectId(creator_id),
-        title,
-        description,
-      });
-  
-      await this.threadModel.create(thread);
-  
-      // Fetch additional details
-      const course = await this.courseModel.findOne({
-        _id: new Types.ObjectId(course_id),
-      });
-      const user = await this.userModel.findOne({ _id: creator_id });
-  
-      const type = role === 'instructor' ? 'Announcement' : 'Thread';
-  
-      // Get the list of course members
-      const members_list = await this.getMembersList(course_id);
-  
-      // Send notification to course members
-      await this.sendNotification(
-        members_list,
-        `New ${type}`,
-        `You have a new ${type} in ${course.title} from ${user.name}: ${title}`,
-        'thread',
-      );
-  
-      // Build the response structure
-      const data = {
-        _id: thread._id.toString(),
-        course_id: course_id,
-        title: title,
-        creator_id: {
-          _id: user._id.toString(),
-          name: user.name,
-          role: creator_id === user._id.toString() ? 'thread master' : role, // Check if the creator is the current user
-        },
-        createdAt: new Date().toISOString(),
-        description: description,
-        messagesCount: 0, // Newly created thread will have no messages
-      };
-  
-      return {
-        statusCode: HttpStatus.OK,
-        message: 'Thread created successfully',
-        data: data,
-      };
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+  creator_id: string,
+  role: string,
+  course_id: string,
+  threadData: ThreadDto,
+) {
+  try {
+    // Check if the user is associated with the course
+    const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
+    if (!enrolled) {
       throw new HttpException(
-        `Database error: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'You are not associated with this course',
+        HttpStatus.UNAUTHORIZED,
       );
     }
+
+    const { title, description } = threadData;
+
+    // Create a new thread
+    const thread = new this.threadModel({
+      course_id: new Types.ObjectId(course_id),
+      creator_id: new Types.ObjectId(creator_id),
+      title,
+      description,
+    });
+
+    await this.threadModel.create(thread);
+
+    // Fetch additional details
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(course_id),
+    });
+    const user = await this.userModel.findOne({ _id: creator_id });
+
+    const type = role === 'instructor' ? 'Announcement' : 'Thread';
+
+    // Get the list of course members
+    const members_list = await this.getMembersList(course_id);
+
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New ${type}`,
+      `You have a new ${type} in ${course.title} from ${user.name}: ${title}`,
+      'thread',
+    );
+
+    // Build the response structure
+    const data = {
+      _id: thread._id.toString(),
+      course_id: course_id,
+      title: title,
+      creator_id: {
+        _id: user._id.toString(),
+        name: user.name,
+        role: creator_id === user._id.toString() ? 'thread master' : role, // Check if the creator is the current user
+      },
+      createdAt: new Date().toISOString(),
+      description: description,
+      messagesCount: 0, // Newly created thread will have no messages
+    };
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Thread created successfully',
+      data: data,
+    };
+  } catch (error) {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+    throw new HttpException(
+      `Database error: ${error.message}`,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
-  
+}
+
 
   async sendMessageToThread(
     userId: string,

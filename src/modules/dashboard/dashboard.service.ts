@@ -332,10 +332,10 @@ export class DashboardService {
     let courseWithHighestAverageGrade = null;
     let courseWithMostStudents = null;
 
-    let maxRating = 0;
-    let maxGrade = 0;
-    let maxAverageGrade = 0;
-    let maxStudents = 0;
+    let maxRating = -1;
+    let maxGrade = -1;
+    let maxAverageGrade = -1;
+    let maxStudents = -1;
 
     for (const course of courses) {
       const { _id: courseId, title } = course;
@@ -382,6 +382,11 @@ export class DashboardService {
         courseWithMostStudents = { courseId, title, studentCount };
       }
     }
+
+    console.log('highestRatedCourse', highestRatedCourse);
+    console.log('studentWithHighestGrade', studentWithHighestGrade);
+    console.log('courseWithHighestAverageGrade', courseWithHighestAverageGrade);
+    console.log('courseWithMostStudents', courseWithMostStudents);
 
     return {
       highestRatedCourse,
