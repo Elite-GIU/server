@@ -324,4 +324,17 @@ export class ModuleService {
     );
     return updatedModule;
   }
+
+  async getContent(contentId: string, moduleId: string) {
+    const moduleIdObject = new Types.ObjectId(moduleId);
+    const contentIdObject = new Types.ObjectId(contentId);
+    const content = await this.contentModel.findById(contentIdObject);
+    const module = await this.moduleModel.findById(moduleIdObject);
+
+    if (!content) throw new NotFoundException('Content not found');
+    if(!module.content.includes(contentIdObject)) throw new NotFoundException("Content not found");
+    if(!content.isVisible) throw new NotFoundException("Content not found");
+
+    return content;
+  }
 }
