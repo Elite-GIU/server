@@ -7,6 +7,7 @@ import { Course } from 'src/database/schemas/course.schema';
 import { ModuleEntity } from 'src/database/schemas/module.schema';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
+import { User } from 'src/database/schemas/user.schema';
 
 @Injectable()
 export class DashboardService {
@@ -15,6 +16,7 @@ export class DashboardService {
     @InjectModel(QuizResponse.name) private readonly quizResponseModel: Model<any>,
     @InjectModel(Course.name) private readonly coursesModel: Model<any>,
     @InjectModel(ModuleEntity.name) private readonly modulesModel: Model<any>,
+    @InjectModel(User.name) private readonly userModel: Model<any>,
   ) {}
 
   async getStudentDashboard(userId: string) {
@@ -203,7 +205,6 @@ export class DashboardService {
 
     for (const student of students) {
       const averageGrade = await this.calculateAverageGrade(student.user_id, courseId);
-  
       if (averageGrade < 50) {
         segmentation.belowAverage++;
       } else if (averageGrade >= 50 && averageGrade < 75) {
@@ -317,6 +318,77 @@ export class DashboardService {
   private calculateAverage(grades: number[]) {
     if (grades.length === 0) return 0;
     return grades.reduce((sum, grade) => sum + grade, 0) / grades.length;
+  }
+
+  async getInstructorMetrics(instructorId: string) {
+    const courses = await this.coursesModel.find({ instructor_id: new Types.ObjectId(instructorId) });
+
+    if (!courses.length) {
+      return { error: 'No courses found for the given instructor.' };
+    }
+
+    let highestRatedCourse = null;
+    let studentWithHighestGrade = null;
+    let courseWithHighestAverageGrade = null;
+    let courseWithMostStudents = null;
+
+    let maxRating = 0;
+    let maxGrade = 0;
+    let maxAverageGrade = 0;
+    let maxStudents = 0;
+
+    for (const course of courses) {
+      const { _id: courseId, title } = course;
+
+      // 1. Calculate the highest-rated course
+      const averageRating = await this.calculateAverageRatings(course.ratings || []);
+      if (averageRating > maxRating) {
+        maxRating = averageRating;
+        highestRatedCourse = { courseId, title, averageRating };
+      }
+
+      // 2. Find the student with the highest grade
+      const students = await this.studentCourseModel.find({ course_id: courseId });
+
+      for (const student of students) {
+        const averageGrade = await this.calculateAverageGrade(student.user_id, courseId);
+        if (averageGrade > maxGrade) {
+          maxGrade = averageGrade;
+
+          // Fetch student name
+          const user = await this.userModel.findById(student.user_id);
+
+          studentWithHighestGrade = {
+            studentId: student.user_id,
+            studentName: user?.name, // Assumes 'name' field exists in User model
+            grade: averageGrade,
+            courseId,
+            courseName: title,
+          };
+        }
+      }
+
+      // 3. Find the course with the highest average grade
+      const courseAverageGrade = await this.getCourseAverageGrade(courseId);
+      if (courseAverageGrade > maxAverageGrade) {
+        maxAverageGrade = courseAverageGrade;
+        courseWithHighestAverageGrade = { courseId, title, averageGrade: courseAverageGrade };
+      }
+
+      // 4. Find the course with the greatest number of students
+      const studentCount = await this.studentCourseModel.countDocuments({ course_id: courseId });
+      if (studentCount > maxStudents) {
+        maxStudents = studentCount;
+        courseWithMostStudents = { courseId, title, studentCount };
+      }
+    }
+
+    return {
+      highestRatedCourse,
+      studentWithHighestGrade,
+      courseWithHighestAverageGrade,
+      courseWithMostStudents,
+    };
   }
 
 }
