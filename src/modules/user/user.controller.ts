@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { UpdateUserDto } from './dto/UpdateUserDto';
 import { UserService } from './user.service';
+import { Public } from 'src/common/decorators/public.decorator';
 
 
 @Controller('users')
@@ -27,7 +28,7 @@ export class UserController {
   }
 
   @Get('instructor-name/:userId')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the name of the currently authenticated instructor' })
   @ApiResponse({ status: 200, description: 'The name of the currently authenticated instructor' })
