@@ -383,10 +383,6 @@ export class DashboardService {
       }
     }
 
-    console.log('highestRatedCourse', highestRatedCourse);
-    console.log('studentWithHighestGrade', studentWithHighestGrade);
-    console.log('courseWithHighestAverageGrade', courseWithHighestAverageGrade);
-    console.log('courseWithMostStudents', courseWithMostStudents);
 
     return {
       highestRatedCourse,
