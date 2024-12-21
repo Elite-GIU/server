@@ -19,6 +19,7 @@ import { Response } from 'express';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 import { RateModuleDto } from './dto/RateModuleDto';
 import { Types } from 'mongoose';
+import * as path from 'path';
 
 @ApiTags('Modules')
 @Controller()
@@ -342,8 +343,19 @@ export class ModuleController {
       const fileName = contentRes.content.replace('uploads/', '');
       const filePath = contentRes.content;
       const fileStream = createReadStream(filePath);
-  
-      response.set('Content-Type', contentRes.type === 'document' ? 'application/pdf' : 'application/octet-stream');
+      
+      const ext = path.extname(fileName).toLowerCase();
+      let contentType = 'application/octet-stream'; 
+      if (ext === '.pdf') {
+        contentType = 'application/pdf';
+      } else if (ext === '.mp4') {
+        contentType = 'video/mp4';
+      } else if (ext === '.mov') {
+        contentType = 'video/quicktime';
+      } else if (ext === '.avi') {
+        contentType = 'video/x-msvideo';
+      }
+      response.set('Content-Type', contentType);
       response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       
       fileStream.pipe(response);
