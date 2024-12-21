@@ -28,7 +28,6 @@ import { ThreadDto } from './dto/ThreadDto';
 import { RoomDto } from './dto/RoomDto';
 import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
 import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
-import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 import { ThreadEditDto } from './dto/ThreadEditDto';
 @Controller('chat')
 @ApiTags('Chat')
@@ -36,7 +35,10 @@ import { ThreadEditDto } from './dto/ThreadEditDto';
 @ApiBearerAuth()
 @ApiResponse({ status: 401, description: 'Unauthorized' })
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    
+  ) {}
 
   //---------------------------------- STUDY ROOMS ----------------------------------\\
 
@@ -150,7 +152,9 @@ export class ChatController {
     },
     @Body() roomData: RoomDto,
   ) {
-    return this.chatService.createRoom(userId, course.id, roomData);
+    // return this.chatService.createRoom(userId, course.id, roomData);
+    const room = await this.chatService.createRoom(userId, course.id, roomData);
+    return room;
   }
 
   // Send message to a study room
@@ -175,12 +179,8 @@ export class ChatController {
     studyRoom: { course_id: string; _id: string },
     @Body() messageData: MessageDto,
   ) {
-    return this.chatService.sendMessage(
-      userId,
-      studyRoom.course_id,
-      studyRoom._id,
-      messageData,
-    );
+    const message = await this.chatService.sendMessage(userId, studyRoom.course_id, studyRoom._id, messageData);
+    return message;
   }
 
   // Reply to a message in a study room
@@ -218,13 +218,8 @@ export class ChatController {
     message: { _id: string },
     @Body() messageData: MessageDto,
   ) {
-    return this.chatService.replyToMessage(
-      userId,
-      studyRoom.course_id,
-      studyRoom._id,
-      message._id,
-      messageData,
-    );
+    const reply = await this.chatService.replyToMessage(userId, studyRoom.course_id, studyRoom._id, message._id, messageData,);
+    return reply;
   }
 
   //---------------------------------- FORUMS ----------------------------------\\

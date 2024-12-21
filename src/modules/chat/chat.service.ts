@@ -13,7 +13,6 @@ import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 import { RoomDto } from './dto/RoomDto';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 import { ThreadEditDto } from './dto/ThreadEditDto';
-import { NotificationService } from '../notification/notification.service';
 import { Notification } from 'src/database/schemas/notification.schema';
 
 @Injectable()
@@ -223,6 +222,8 @@ export class ChatService {
         );
       }
       const { content } = messageData;
+    
+      // Create and save the message
       const message = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
         room_id: new Types.ObjectId(room_id),
@@ -230,27 +231,54 @@ export class ChatService {
         parent_id: null,
         content,
       });
-
-      await this.roomMessageModel.create(message);
-      //Get the room name
-      const { title } = await this.roomModel.findOne({
+      const savedMessage = await message.save();
+    
+      // Get the room name
+      const room = await this.roomModel.findOne({
         _id: new Types.ObjectId(room_id),
       });
-      // Get the sender name
-      const { name } = await this.userModel.findOne({ _id: sender_id });
-      // Save the notification
-      const { members_list } = await this.roomModel.findOne({ _id: room_id });
-      // Destructure members_list to array of user_id
-      await this.sendNotification(
-        members_list,
-        'New Message',
-        `You have a new message in ${title} from ${name} : ${content}`,
-        'message',
+      const title = room?.title || 'Unknown Room';
+    
+      // Get the sender details
+      const sender = await this.userModel.findOne(
+        { _id: new Types.ObjectId(sender_id) },
+        { _id: 1, name: 1, role: 1 },
       );
+    
+      // Handle the case where sender or room data is missing
+      if (!sender) {
+        throw new HttpException('Sender not found', HttpStatus.NOT_FOUND);
+      }
+    
+      // Save the notification
+      const { members_list } = room;
+      if (members_list) {
+        await this.sendNotification(
+          members_list,
+          'New Message',
+          `You have a new message in ${title} from ${sender.name}: ${content}`,
+          'message',
+        );
+      }
+    
+      // Format and return the response
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
-        data: message,
+        data: {
+          _id: savedMessage._id.toString(),
+          course_id: savedMessage.course_id.toString(),
+          room_id: savedMessage.room_id.toString(),
+          sender_id: {
+            _id: sender._id.toString(),
+            name: sender.name,
+            role: sender.role,
+          },
+          parent_id: savedMessage.parent_id,
+          content: savedMessage.content,
+          createdAt: savedMessage.createdAt?.toISOString(), 
+          updatedAt: savedMessage.updatedAt?.toISOString(),
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -277,32 +305,64 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-
+  
       const { content } = messageData;
-
+  
       const reply = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
-        sender_id: new Types.ObjectId(sender_id),
         room_id: new Types.ObjectId(room_id),
+        sender_id: new Types.ObjectId(sender_id),
         parent_id: new Types.ObjectId(messageId),
         content,
       });
-      await this.roomMessageModel.create(reply);
-      const { title } = await this.roomModel.findOne({
+      const savedReply = await reply.save();
+  
+      // Get the room name
+      const room = await this.roomModel.findOne({
         _id: new Types.ObjectId(room_id),
-      });
-      const { name } = await this.userModel.findOne({ _id: sender_id });
-      const { members_list } = await this.roomModel.findOne({ _id: room_id });
-      await this.sendNotification(
-        members_list,
-        'New Reply',
-        `You have a new reply in ${title} from ${name}: ${content}`,
-        'message',
+      }, { title: 1, members_list: 1 });
+      const title = room?.title || 'Unknown Room';
+  
+      // Get the sender details
+      const sender = await this.userModel.findOne(
+        { _id: new Types.ObjectId(sender_id) },
+        { _id: 1, name: 1, role: 1 },
       );
+  
+      // Handle the case where sender or room data is missing
+      if (!sender) {
+        throw new HttpException('Sender not found', HttpStatus.NOT_FOUND);
+      }
+  
+      // Save the notification
+      const { members_list } = room;
+      if (members_list) {
+        await this.sendNotification(
+          members_list,
+          'New Reply',
+          `You have a new reply in ${title} from ${sender.name}: ${content}`,
+          'message',
+        );
+      }
+  
+      // Format and return the response
       return {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
-        data: reply,
+        data: {
+          _id: savedReply._id.toString(),
+          course_id: savedReply.course_id.toString(),
+          room_id: savedReply.room_id.toString(),
+          sender_id: {
+            _id: sender._id.toString(),
+            name: sender.name,
+            role: sender.role,
+          },
+          parent_id: savedReply.parent_id.toString(),
+          content: savedReply.content,
+          createdAt: savedReply.createdAt?.toISOString(), 
+          updatedAt: savedReply.updatedAt?.toISOString(),
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -314,7 +374,7 @@ export class ChatService {
       );
     }
   }
-
+  
   //---------------------------------- FORUMS ----------------------------------\\
 
   async getCourseThreads(userId: string, course_id: string, title?: string) {
