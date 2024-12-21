@@ -27,6 +27,7 @@
     "@nestjs/mongoose": "^10.1.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.12",
+    "@nestjs/platform-socket.io": "^10.4.15",
     "@nestjs/swagger": "^8.0.7",
     "@nestjs/websockets": "^10.4.15",
     "@simplewebauthn/server": "^13.0.0",
@@ -48,6 +49,7 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.0.3"
   },
