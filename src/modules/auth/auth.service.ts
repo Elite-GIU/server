@@ -345,6 +345,14 @@ export class AuthService {
         throw new NotFoundException('User not found.');
     }
 
+    if(user.isActive === false) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        errorCode: 'USER_DELETED',
+        message: 'User is deleted.',
+      });
+    }
+
     if (user.biometricHash === hash) {
         return true;
     } else {
