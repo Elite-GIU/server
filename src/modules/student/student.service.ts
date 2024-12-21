@@ -69,4 +69,37 @@ export class StudentService {
     };
   }
 
+  async getAllStudents(page: number, limit: number, name?: string) {
+    const query: Record<string, any> = { role: "student" };
+  
+    if (name) {
+      query.name = { $regex: name, $options: "i" };
+    }
+ 
+    const students = await this.userModel
+      .find(query, { _id: 1, name: 1, email: 1, isActive: 1 }) 
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const totalStudents = await this.userModel.countDocuments(query);
+    const totalPages = Math.ceil(totalStudents / limit);
+
+    if (!students || students.length === 0) {
+      throw new NotFoundException("No students found");
+    }
+  
+    return {
+      students,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalStudents,
+      },
+    };
+  }
+
+  
+  
+  
+
 }
