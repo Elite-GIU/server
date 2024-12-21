@@ -75,10 +75,16 @@ export class ChatService {
           course_id: new Types.ObjectId(course_id),
         })
         .sort({ createdAt: -1 });
+
+         // Filter rooms where members_list contains userId
+        const filteredRooms = rooms.filter((room) => 
+          room.members_list.includes(new Types.ObjectId(userId))
+        );
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Rooms fetched successfully',
-        data: rooms,
+        data: filteredRooms,
       };
     } catch (error) {
       if (error instanceof HttpException) {
