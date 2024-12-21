@@ -962,13 +962,15 @@ export class ChatService {
 
     const activeUsers = await this.userModel
       .find({
-        _id: { $in: userIds },
+        _id: { $in: userIds, $ne: user_id },
         isActive: true,
       })
       .select('name _id');
-    return activeUsers.map((user) => ({
+    return {
+    data: activeUsers.map((user) => ({
       user_id: user._id,
       name: user.name,
-    }));
+    }))
+    };
   }
 }
