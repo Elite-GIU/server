@@ -252,7 +252,8 @@ export class CourseController {
   }
 
   @Get('admin/courses')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Admin: Retrieve all courses or search by name or instructor name' })
   @ApiQuery({
     name: 'name',
