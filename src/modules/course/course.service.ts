@@ -270,5 +270,55 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
       updatedInstructor,
     };
   }
+
+  async getAllCoursesAdminPage(page: number, limit: number, name?: string, instructorName?: string):Promise<any>{
+    const query: Record<string, any> = {};
+
+  if (name) {
+    query.$or = [
+      { title: { $regex: name, $options: 'i' } }, 
+      { keywords: { $regex: name, $options: 'i' } },
+      { category: { $regex: name, $options: 'i' } } 
+    ];
+  }
+
+  if (instructorName) {
+    const instructors = await this.userModel.find({ name: { $regex: instructorName, $options: 'i' } });
+    if (!instructors || instructors.length === 0) throw new NotFoundException('Instructor not found');
+    const instructorIds: Types.ObjectId[] = instructors.map(instructor => instructor._id as unknown as Types.ObjectId);
+    query.instructor_id = { $in: instructorIds };
+  }
+
+  const normalCourses = await this.courseModel.find(query).lean(); 
+  const archivedCourses = await this.courseArchiveModel.find(query).lean();
+
+  const normalCoursesWithFlag = normalCourses.map(course => ({
+    ...course,
+    isArchived: false,
+  }));
+  const archivedCoursesWithFlag = archivedCourses.map(course => ({
+    ...course,
+    isArchived: true,
+  }));
+
+  const allCourses = [...normalCoursesWithFlag, ...archivedCoursesWithFlag];
+
+  if (allCourses.length === 0) {
+    throw new NotFoundException('No courses available');
+  }
+
+  const totalCourses = allCourses.length;
+  const totalPages = Math.ceil(totalCourses / limit);
+  const paginatedCourses = allCourses.slice((page - 1) * limit, page * limit);
+
+  return {
+    courses: paginatedCourses,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCourses,
+    },
+  };
+  }
   
 }
