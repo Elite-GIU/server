@@ -302,17 +302,21 @@ export class DashboardService {
             user_id: new Types.ObjectId(userId),
             module_id: module._id,
           })
-          .sort({ score: -1 }) 
-          .limit(1); 
+          .sort({ score: -1 })
+          .limit(1);
+
+        if (topQuizResponse.length > 0) {
+          return {
+            moduleId: module._id,
+            highestQuiz: topQuizResponse[0],
+          };
+        }
   
-        return {
-          moduleId: module._id,
-          highestQuiz: topQuizResponse[0] || null, 
-        };
+        return null; 
       })
     );
-  
-    return highestScores;
+
+    return highestScores.filter((score) => score !== null);
   }
   
   private calculateAverage(grades: number[]) {
