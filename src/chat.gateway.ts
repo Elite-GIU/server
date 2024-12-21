@@ -79,11 +79,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
             sender_id: {
                 _id: data.sender_id._id,
                 name: data.sender_id.name,
-                role: data.sender_id
+                role: data.sender_id.role
             },
             parent_id: data.parent_id,
             content: data.content,
-            createdAt: data.createdAt || new Date().toISOString(), // Assuming created_at might be optional
+            createdAt: data.createdAt || new Date().toISOString(), 
             updatedAt: new Date().toISOString()
         };
         this.server.to(data.room_id).emit('message', message); // Send the message to the specific room
