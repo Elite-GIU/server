@@ -554,85 +554,20 @@ export class ChatService {
   }
 
   async getMembersList(course_id: string) {
-    return await this.studentCourseModel
+    
+    let thread_list = await this.studentCourseModel
       .find({
         course_id: new Types.ObjectId(course_id),
       })
       .select('user_id');
+
+    const instructor = await this.courseModel.findOne({ _id: course_id }).select('instructor_id');
+
+    if (instructor) {
+      thread_list.push(new this.studentCourseModel({ user_id: instructor.instructor_id }));
+    }
+    return thread_list;
   }
-
-  // async postThread(
-  //   creator_id: string,
-  //   role: string,
-  //   course_id: string,
-  //   threadData: ThreadDto,
-  // ) {
-  //   try {
-  //     const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
-  //     if (!enrolled) {
-  //       throw new HttpException(
-  //         'You are not associated with this course',
-  //         HttpStatus.UNAUTHORIZED,
-  //       );
-  //     }
-  //     const { title, description } = threadData;
-  //     const thread = new this.threadModel({
-  //       course_id: new Types.ObjectId(course_id),
-  //       creator_id: new Types.ObjectId(creator_id),
-  //       title,
-  //       description,
-  //     });
-
-  //     await this.threadModel.create(thread);
-  //     const { title: courseName } = await this.courseModel.findOne({
-  //       _id: new Types.ObjectId(course_id),
-  //     });
-  //     const { name } = await this.userModel.findOne({ _id: creator_id });
-  //     const type = role === 'instructor' ? 'Announcement' : 'Thread';
-  //     //Get student id list from course by id
-  //     const members_list = await this.getMembersList(course_id);
-  //     await this.sendNotification(
-  //       members_list,
-  //       `New ${type}`,
-  //       `You have a new ${type} in ${courseName} from ${name}: ${title}`,
-  //       'thread',
-  //     );
-
-  //     const data = {
-  //       ...thread.toObject(),
-  //       creator_id: {
-  //         name: name,
-  //       },
-  //       createdAt: new Date(),
-  //     };
-  //     return {
-  //       statusCode: HttpStatus.OK,
-  //       message: 'Thread created successfully',
-  //       data: data,
-  //     };
-  //   } catch (error) {
-  //     if (error instanceof HttpException) {
-  //       throw error;
-  //     }
-  //     throw new HttpException(
-  //       `Database error: ${error.message}`,
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
-
-  // return this structure 
-  // _id: string;
-  // course_id: string;
-  // title: string;
-  // creator_id: {
-  //   _id: string;
-  //   name: string;
-  //   role: string;
-  // };
-  // createdAt: string;
-  // description: string;
-  // messagesCount: number;
 
   async postThread(
   creator_id: string,
