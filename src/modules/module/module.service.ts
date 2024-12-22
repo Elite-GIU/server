@@ -212,7 +212,7 @@ export class ModuleService {
       );
 
       return {
-        filePath,
+        content,
       };
     } catch (error) {
       if (file && file.path && fs.existsSync(file.path)) {
