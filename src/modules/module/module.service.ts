@@ -229,8 +229,8 @@ export class ModuleService {
     
   
     const existingContent = await this.contentModel.findById(contentIdObject);
-
     if (file) {
+
       const filePath = path.join('uploads', file.filename);
       fs.renameSync(file.path, filePath);
 
@@ -246,7 +246,7 @@ export class ModuleService {
         title: updateContentDto.title || existingContent.title,
         description: updateContentDto.description || existingContent.description,
         type: updateContentDto.type || existingContent.type,
-        isVisible: true,
+        isVisible: updateContentDto.isVisible || existingContent.isVisible,
         content: filePath,
       });
 
@@ -326,7 +326,7 @@ export class ModuleService {
     return updatedModule;
   }
 
-  async getContent(contentId: string, moduleId: string) {
+  async getContent(contentId: string, moduleId: string, isInstructor: boolean) {
     const moduleIdObject = new Types.ObjectId(moduleId);
     const contentIdObject = new Types.ObjectId(contentId);
     const content = await this.contentModel.findById(contentIdObject);
@@ -334,8 +334,11 @@ export class ModuleService {
 
     if (!content) throw new NotFoundException('Content not found');
     if(!module.content.includes(contentIdObject)) throw new NotFoundException("Content not found");
-    if(!content.isVisible) throw new NotFoundException("Content not found");
+    if(!isInstructor) {
+      if(!content.isVisible) throw new NotFoundException("Content not found");
+    }
 
     return content;
   }
+
 }
