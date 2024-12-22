@@ -163,7 +163,11 @@ export class ChatService {
         user_id: new Types.ObjectId(members_list[i]),
         course_id: new Types.ObjectId(course_id),
       });
-      if (!member) {
+      const member_instructor = await this.courseModel.findOne({
+        instructor_id: new Types.ObjectId(members_list[i]),
+        _id: new Types.ObjectId(course_id),
+      });
+      if (!member&&!member_instructor) {
         return false;
       }
     }
