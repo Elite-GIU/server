@@ -150,7 +150,7 @@ async addInstructorCourse(createCourseDto : CreateCourseDto, instructor_id: stri
 async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: string, id: string) : Promise<Course> {
     const course = await this.courseModel.findById(id);
     const instuctorIdObject = new Types.ObjectId(instructor_id);
-    const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title: updateCourseDto.title});
+    const duplicated = await this.courseModel.find({instructor_id: instuctorIdObject, title:updateCourseDto.title, _id: { $ne: new Types.ObjectId(id) }});
 
     if(duplicated.length)
       throw new BadRequestException('You have another course with this title')
