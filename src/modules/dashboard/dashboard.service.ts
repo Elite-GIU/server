@@ -302,17 +302,21 @@ export class DashboardService {
             user_id: new Types.ObjectId(userId),
             module_id: module._id,
           })
-          .sort({ score: -1 }) 
-          .limit(1); 
+          .sort({ score: -1 })
+          .limit(1);
+
+        if (topQuizResponse.length > 0) {
+          return {
+            moduleId: module._id,
+            highestQuiz: topQuizResponse[0],
+          };
+        }
   
-        return {
-          moduleId: module._id,
-          highestQuiz: topQuizResponse[0] || null, 
-        };
+        return null; 
       })
     );
-  
-    return highestScores;
+
+    return highestScores.filter((score) => score !== null);
   }
   
   private calculateAverage(grades: number[]) {
@@ -332,10 +336,10 @@ export class DashboardService {
     let courseWithHighestAverageGrade = null;
     let courseWithMostStudents = null;
 
-    let maxRating = 0;
-    let maxGrade = 0;
-    let maxAverageGrade = 0;
-    let maxStudents = 0;
+    let maxRating = -1;
+    let maxGrade = -1;
+    let maxAverageGrade = -1;
+    let maxStudents = -1;
 
     for (const course of courses) {
       const { _id: courseId, title } = course;
@@ -382,6 +386,7 @@ export class DashboardService {
         courseWithMostStudents = { courseId, title, studentCount };
       }
     }
+
 
     return {
       highestRatedCourse,

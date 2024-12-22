@@ -34,7 +34,7 @@ export class QuestionService {
   // Function to Create a new question in the module's question bank
   async createQuestion(moduleId: string, createQuestionDto: CreateQuestionDto) {
     // Get the Question from the DTO
-    const { question, choices, type } = createQuestionDto;
+    const { question, choices, type, right_choice } = createQuestionDto;
 
     // Convert the moduleId to an ObjectId
     const moduleIdObject = new Types.ObjectId(moduleId);
@@ -48,16 +48,19 @@ export class QuestionService {
       .exec();
 
     if (questionExists) {
-      throw new BadRequestException('Question already exists.');
+      return new BadRequestException('Question already exists.');
     }
 
     if(type === 'mcq' && choices.length !== 4) {
-      throw new BadRequestException('MCQ questions should have 4 choices.');
+      return new BadRequestException('MCQ questions should have 4 choices.');
     }
 
     if(type === 'true_false' && choices.length !== 2) {
-      throw new BadRequestException('True/False questions should have 2 choices.');
+      return new BadRequestException('True/False questions should have 2 choices.');
     }
+    if(!choices.includes(right_choice)) {
+      return new BadRequestException('The right choice must be one of the provided choices.');
+    }
 
 
     // Create the question
@@ -79,18 +82,24 @@ export class QuestionService {
 
   // Function to Update a question in the module's question bank
   async updateQuestion(moduleId: string, questionId: string, updateQuestionDto: UpdateQuestionDto) {
-    // Convert moduleId and questionId to ObjectId instances
+
+      const {choices , right_choice} = updateQuestionDto;
+      if(choices && right_choice){
+
+        if(!choices.includes(right_choice)) {
+          throw new BadRequestException('The right choice must be one of the provided choices.');
+        }
+      }
+      // Convert moduleId and questionId to ObjectId instances
     const moduleIdObject = new Types.ObjectId(moduleId);
     const questionIdObject = new Types.ObjectId(questionId);
-  
     // Check if the question exists in the question bank of the given module
     const questionbank = await this.questionbankModel.findOne({
       module_id: moduleIdObject,
       questions: questionIdObject, 
     });
-
     if (!questionbank) {
-      throw new NotFoundException('Question not found in the specified module.');
+      return new NotFoundException('Question not found in the specified module.');
     }
   
     // Update the question
@@ -99,7 +108,6 @@ export class QuestionService {
       updateQuestionDto,
       { new: true, runValidators: true }
     );
-  
     return {
       updatedQuestion,
     };

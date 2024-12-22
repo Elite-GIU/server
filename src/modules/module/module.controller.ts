@@ -19,6 +19,7 @@ import { Response } from 'express';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 import { RateModuleDto } from './dto/RateModuleDto';
 import { Types } from 'mongoose';
+import * as path from 'path';
 
 @ApiTags('Modules')
 @Controller()
@@ -290,8 +291,14 @@ export class ModuleController {
     try {
       return await this.moduleService.updateContent(module._id, content.id, updateContentDto, file);
     } catch (error) {
-      console.error('Error updating content:', error);
-      throw new BadRequestException('Failed to update content. Please check the input values.');
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('Content not found or does not exist.');
+      } else if (error instanceof BadRequestException) {
+        throw new BadRequestException('Content with the same title already exists.');
+      } else {
+        console.error('Error updating content:', error);
+        throw new BadRequestException('Failed to update content. Please check the input values.');
+      }
     }
   }
 
@@ -342,8 +349,19 @@ export class ModuleController {
       const fileName = contentRes.content.replace('uploads/', '');
       const filePath = contentRes.content;
       const fileStream = createReadStream(filePath);
-  
-      response.set('Content-Type', contentRes.type === 'document' ? 'application/pdf' : 'application/octet-stream');
+      
+      const ext = path.extname(fileName).toLowerCase();
+      let contentType = 'application/octet-stream'; 
+      if (ext === '.pdf') {
+        contentType = 'application/pdf';
+      } else if (ext === '.mp4') {
+        contentType = 'video/mp4';
+      } else if (ext === '.mov') {
+        contentType = 'video/quicktime';
+      } else if (ext === '.avi') {
+        contentType = 'video/x-msvideo';
+      }
+      response.set('Content-Type', contentType);
       response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       
       fileStream.pipe(response);
@@ -423,7 +441,115 @@ async getContent(
     },
   ) {
 
-    const fetchedContent = await this.moduleService.getContent(content.id, module._id);
+    const fetchedContent = await this.moduleService.getContent(content.id, module._id, false);
     return fetchedContent;
   }
-}
+
+  @Get("instructor/courses/:courseId/modules/:moduleId/content/:contentId")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, InstructorGuard)
+  @ApiOperation({ summary: 'Get content of a specific module of a course for an instructor' })
+  @ApiResponse({ status: 200, description: 'Content retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Content not found.' })
+  @ApiParam({ name: "courseId", description: "ID of the course", type: String })
+  @ApiParam({ name: "moduleId", description: "ID of the module", type: String })
+  @ApiParam({ name: "contentId", description: "ID of the content", type: String })
+  async getInstructorContent(
+    @GetUser('userId') userId: string, 
+    @AssignedParam(
+      {
+        modelName: 'Course',
+        firstAttrName: 'instructor_id',
+        secondAttrName: '_id',
+        firstKey: 'userId',
+        secondKey: 'courseId',
+      },
+      CheckAssignedValidatorPipe,
+    ) course: { _id: string },
+    @AssignedParam(
+      {
+      modelName: 'ModuleEntity',
+      firstAttrName: 'course_id',
+      secondAttrName: '_id',
+      firstKey: 'courseId',
+      secondKey: 'moduleId',
+      },
+      CheckAssignedValidatorPipe,
+    ) module: { _id: string },
+    @ExistParam(
+      { idKey: 'contentId', modelName: 'Content' },
+      CheckExistValidatorPipe,
+    )
+    content: {
+      id: string;
+      modelName: string;
+    },
+  ) {
+    const fetchedContent = await this.moduleService.getContent(content.id, module._id, true);
+    return fetchedContent;
+  }
+  @Get("instructor/courses/:courseId/modules/:moduleId/content/:contentId/download")
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, InstructorGuard)
+    @ApiOperation({ summary: 'Download content of a specific module of a course for an instructor' })
+    @ApiResponse({ status: 200, description: 'Content downloaded successfully.' })
+    @ApiResponse({ status: 404, description: 'Content not found.' })
+    @ApiParam({name: "courseId", description: "ID of the course", type: String})
+    @ApiParam({name: "moduleId", description: "ID of the module", type: String})
+    @ApiParam({name: "contentId", description: "ID of the content", type: String})
+    async downloadInstructorContent(
+      @Res() response: Response,
+      @GetUser('userId') userId: string, 
+      @AssignedParam(
+        {
+          modelName: 'Course',
+          firstAttrName: 'instructor_id',
+          secondAttrName: '_id',
+          firstKey: 'userId',
+          secondKey: 'courseId',
+        },
+        CheckAssignedValidatorPipe,
+      ) course: { _id: string },
+      @AssignedParam(
+        {
+        modelName: 'ModuleEntity',
+        firstAttrName: 'course_id',
+        secondAttrName: '_id',
+        firstKey: 'courseId',
+        secondKey: 'moduleId',
+        },
+        CheckAssignedValidatorPipe,
+      ) module: { _id: string },
+      @ExistParam(
+        { idKey: 'contentId', modelName: 'Content' },
+        CheckExistValidatorPipe,
+      )
+      content: {
+        id: string;
+        modelName: string;
+      },
+    ) {
+      const contentRes = await this.moduleService.downloadContent(content.id);
+  
+        const fileName = contentRes.content.replace('uploads/', '');
+        const filePath = contentRes.content;
+        const fileStream = createReadStream(filePath);
+        
+        const ext = path.extname(fileName).toLowerCase();
+        let contentType = 'application/octet-stream'; 
+        if (ext === '.pdf') {
+          contentType = 'application/pdf';
+        } else if (ext === '.mp4') {
+          contentType = 'video/mp4';
+        } else if (ext === '.mov') {
+          contentType = 'video/quicktime';
+        } else if (ext === '.avi') {
+          contentType = 'video/x-msvideo';
+        }
+        response.set('Content-Type', contentType);
+        response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        
+        fileStream.pipe(response);
+    }
+  }
+

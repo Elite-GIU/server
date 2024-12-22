@@ -35,6 +35,13 @@ export class UpdateContentDto {
   type?: ContentType;
 
   @ApiPropertyOptional({
+    description: 'Content Visibility',
+    type: 'boolean'
+  })
+  @IsOptional()
+  isVisible: boolean
+
+  @ApiPropertyOptional({
     description: 'The file being updated',
     type: 'string',
     format: 'binary',

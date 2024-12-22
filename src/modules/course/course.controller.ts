@@ -51,17 +51,25 @@ export class CourseController {
   @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
   @ApiResponse({
     status: 200,
-    description: 'List of courses successfully retrieved.',
+    description: 'List of courses successfully retrieved. with pagination details',
     schema: {
-      example: [
-        {
-          _id: '648a1e9b9f4e2d1a1b2c3d4e',
-          category: 'Programming',
-          description: 'Learn Python programming from scratch',
-          difficulty_level: 'Beginner',
+      example: {"courses": 
+          [
+          {
+            _id: '648a1e9b9f4e2d1a1b2c3d4e',
+            category: 'Programming',
+            description: 'Learn Python programming from scratch',
+            difficulty_level: 'Beginner',
+          },
+        ],
+        pagination: {
+          totalCourses: 1,
+          totalPages: 1,
+          currentPage: 1,
         },
-      ],
-    },
+      },
+    }
+
   })
   @ApiResponse({ status: 404, description: 'No courses found.' })
   async getAllCourses(
@@ -241,6 +249,38 @@ export class CourseController {
       
       return await this.courseService.deleteCourse(course.id);   
 
+  }
+
+  @Get('admin/courses')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin: Retrieve all courses or search by name or instructor name' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'The name of the course to search for (case-insensitive) or keyword',
+    example: 'Python',
+  })
+  @ApiQuery({
+    name: 'instructorName',
+    required: false,
+    description: 'The name of the instructor to search for (case-insensitive)',
+    example: 'John Doe',
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of courses successfully retrieved. with pagination details',
+  })
+  @ApiResponse({ status: 404, description: 'No courses found.' })
+  async getAllCoursesAdmin(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('name') name: string,
+    @Query('instructorName') instructorName: string,
+  ) {
+    return await this.courseService.getAllCoursesAdminPage(page, limit, name, instructorName);
   }
 }
   

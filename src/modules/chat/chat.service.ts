@@ -13,7 +13,6 @@ import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
 import { RoomDto } from './dto/RoomDto';
 import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 import { ThreadEditDto } from './dto/ThreadEditDto';
-import { NotificationService } from '../notification/notification.service';
 import { Notification } from 'src/database/schemas/notification.schema';
 
 @Injectable()
@@ -76,10 +75,16 @@ export class ChatService {
           course_id: new Types.ObjectId(course_id),
         })
         .sort({ createdAt: -1 });
+
+         // Filter rooms where members_list contains userId
+        const filteredRooms = rooms.filter((room) => 
+          room.members_list.includes(new Types.ObjectId(userId))
+        );
+
       return {
         statusCode: HttpStatus.OK,
         message: 'Rooms fetched successfully',
-        data: rooms,
+        data: filteredRooms,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -158,7 +163,11 @@ export class ChatService {
         user_id: new Types.ObjectId(members_list[i]),
         course_id: new Types.ObjectId(course_id),
       });
-      if (!member) {
+      const member_instructor = await this.courseModel.findOne({
+        instructor_id: new Types.ObjectId(members_list[i]),
+        _id: new Types.ObjectId(course_id),
+      });
+      if (!member&&!member_instructor) {
         return false;
       }
     }
@@ -223,6 +232,8 @@ export class ChatService {
         );
       }
       const { content } = messageData;
+    
+      // Create and save the message
       const message = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
         room_id: new Types.ObjectId(room_id),
@@ -230,27 +241,54 @@ export class ChatService {
         parent_id: null,
         content,
       });
-
-      await this.roomMessageModel.create(message);
-      //Get the room name
-      const { title } = await this.roomModel.findOne({
+      const savedMessage = await message.save();
+    
+      // Get the room name
+      const room = await this.roomModel.findOne({
         _id: new Types.ObjectId(room_id),
       });
-      // Get the sender name
-      const { name } = await this.userModel.findOne({ _id: sender_id });
-      // Save the notification
-      const { members_list } = await this.roomModel.findOne({ _id: room_id });
-      // Destructure members_list to array of user_id
-      await this.sendNotification(
-        members_list,
-        'New Message',
-        `You have a new message in ${title} from ${name} : ${content}`,
-        'message',
+      const title = room?.title || 'Unknown Room';
+    
+      // Get the sender details
+      const sender = await this.userModel.findOne(
+        { _id: new Types.ObjectId(sender_id) },
+        { _id: 1, name: 1, role: 1 },
       );
+    
+      // Handle the case where sender or room data is missing
+      if (!sender) {
+        throw new HttpException('Sender not found', HttpStatus.NOT_FOUND);
+      }
+    
+      // Save the notification
+      const { members_list } = room;
+      if (members_list) {
+        await this.sendNotification(
+          members_list,
+          'New Message',
+          `You have a new message in ${title} from ${sender.name}: ${content}`,
+          'message',
+        );
+      }
+    
+      // Format and return the response
       return {
         statusCode: HttpStatus.OK,
         message: 'Message sent successfully',
-        data: message,
+        data: {
+          _id: savedMessage._id.toString(),
+          course_id: savedMessage.course_id.toString(),
+          room_id: savedMessage.room_id.toString(),
+          sender_id: {
+            _id: sender._id.toString(),
+            name: sender.name,
+            role: sender.role,
+          },
+          parent_id: savedMessage.parent_id,
+          content: savedMessage.content,
+          createdAt: savedMessage.createdAt?.toISOString(), 
+          updatedAt: savedMessage.updatedAt?.toISOString(),
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -277,32 +315,64 @@ export class ChatService {
           HttpStatus.UNAUTHORIZED,
         );
       }
-
+  
       const { content } = messageData;
-
+  
       const reply = new this.roomMessageModel({
         course_id: new Types.ObjectId(course_id),
-        sender_id: new Types.ObjectId(sender_id),
         room_id: new Types.ObjectId(room_id),
+        sender_id: new Types.ObjectId(sender_id),
         parent_id: new Types.ObjectId(messageId),
         content,
       });
-      await this.roomMessageModel.create(reply);
-      const { title } = await this.roomModel.findOne({
+      const savedReply = await reply.save();
+  
+      // Get the room name
+      const room = await this.roomModel.findOne({
         _id: new Types.ObjectId(room_id),
-      });
-      const { name } = await this.userModel.findOne({ _id: sender_id });
-      const { members_list } = await this.roomModel.findOne({ _id: room_id });
-      await this.sendNotification(
-        members_list,
-        'New Reply',
-        `You have a new reply in ${title} from ${name}: ${content}`,
-        'message',
+      }, { title: 1, members_list: 1 });
+      const title = room?.title || 'Unknown Room';
+  
+      // Get the sender details
+      const sender = await this.userModel.findOne(
+        { _id: new Types.ObjectId(sender_id) },
+        { _id: 1, name: 1, role: 1 },
       );
+  
+      // Handle the case where sender or room data is missing
+      if (!sender) {
+        throw new HttpException('Sender not found', HttpStatus.NOT_FOUND);
+      }
+  
+      // Save the notification
+      const { members_list } = room;
+      if (members_list) {
+        await this.sendNotification(
+          members_list,
+          'New Reply',
+          `You have a new reply in ${title} from ${sender.name}: ${content}`,
+          'message',
+        );
+      }
+  
+      // Format and return the response
       return {
         statusCode: HttpStatus.OK,
         message: 'Reply sent successfully',
-        data: reply,
+        data: {
+          _id: savedReply._id.toString(),
+          course_id: savedReply.course_id.toString(),
+          room_id: savedReply.room_id.toString(),
+          sender_id: {
+            _id: sender._id.toString(),
+            name: sender.name,
+            role: sender.role,
+          },
+          parent_id: savedReply.parent_id.toString(),
+          content: savedReply.content,
+          createdAt: savedReply.createdAt?.toISOString(), 
+          updatedAt: savedReply.updatedAt?.toISOString(),
+        },
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -314,7 +384,7 @@ export class ChatService {
       );
     }
   }
-
+  
   //---------------------------------- FORUMS ----------------------------------\\
 
   async getCourseThreads(userId: string, course_id: string, title?: string) {
@@ -554,164 +624,99 @@ export class ChatService {
   }
 
   async getMembersList(course_id: string) {
-    return await this.studentCourseModel
+    
+    let thread_list = await this.studentCourseModel
       .find({
         course_id: new Types.ObjectId(course_id),
       })
       .select('user_id');
+
+    const instructor = await this.courseModel.findOne({ _id: course_id }).select('instructor_id');
+
+    if (instructor) {
+      thread_list.push(new this.studentCourseModel({ user_id: instructor.instructor_id }));
+    }
+    return thread_list;
   }
-
-  // async postThread(
-  //   creator_id: string,
-  //   role: string,
-  //   course_id: string,
-  //   threadData: ThreadDto,
-  // ) {
-  //   try {
-  //     const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
-  //     if (!enrolled) {
-  //       throw new HttpException(
-  //         'You are not associated with this course',
-  //         HttpStatus.UNAUTHORIZED,
-  //       );
-  //     }
-  //     const { title, description } = threadData;
-  //     const thread = new this.threadModel({
-  //       course_id: new Types.ObjectId(course_id),
-  //       creator_id: new Types.ObjectId(creator_id),
-  //       title,
-  //       description,
-  //     });
-
-  //     await this.threadModel.create(thread);
-  //     const { title: courseName } = await this.courseModel.findOne({
-  //       _id: new Types.ObjectId(course_id),
-  //     });
-  //     const { name } = await this.userModel.findOne({ _id: creator_id });
-  //     const type = role === 'instructor' ? 'Announcement' : 'Thread';
-  //     //Get student id list from course by id
-  //     const members_list = await this.getMembersList(course_id);
-  //     await this.sendNotification(
-  //       members_list,
-  //       `New ${type}`,
-  //       `You have a new ${type} in ${courseName} from ${name}: ${title}`,
-  //       'thread',
-  //     );
-
-  //     const data = {
-  //       ...thread.toObject(),
-  //       creator_id: {
-  //         name: name,
-  //       },
-  //       createdAt: new Date(),
-  //     };
-  //     return {
-  //       statusCode: HttpStatus.OK,
-  //       message: 'Thread created successfully',
-  //       data: data,
-  //     };
-  //   } catch (error) {
-  //     if (error instanceof HttpException) {
-  //       throw error;
-  //     }
-  //     throw new HttpException(
-  //       `Database error: ${error.message}`,
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
-
-  // return this structure 
-  // _id: string;
-  // course_id: string;
-  // title: string;
-  // creator_id: {
-  //   _id: string;
-  //   name: string;
-  //   role: string;
-  // };
-  // createdAt: string;
-  // description: string;
-  // messagesCount: number;
 
   async postThread(
-    creator_id: string,
-    role: string,
-    course_id: string,
-    threadData: ThreadDto,
-  ) {
-    try {
-      // Check if the user is associated with the course
-      const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
-      if (!enrolled) {
-        throw new HttpException(
-          'You are not associated with this course',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-  
-      const { title, description } = threadData;
-  
-      // Create a new thread
-      const thread = new this.threadModel({
-        course_id: new Types.ObjectId(course_id),
-        creator_id: new Types.ObjectId(creator_id),
-        title,
-        description,
-      });
-  
-      await this.threadModel.create(thread);
-  
-      // Fetch additional details
-      const course = await this.courseModel.findOne({
-        _id: new Types.ObjectId(course_id),
-      });
-      const user = await this.userModel.findOne({ _id: creator_id });
-  
-      const type = role === 'instructor' ? 'Announcement' : 'Thread';
-  
-      // Get the list of course members
-      const members_list = await this.getMembersList(course_id);
-  
-      // Send notification to course members
-      await this.sendNotification(
-        members_list,
-        `New ${type}`,
-        `You have a new ${type} in ${course.title} from ${user.name}: ${title}`,
-        'thread',
-      );
-  
-      // Build the response structure
-      const data = {
-        _id: thread._id.toString(),
-        course_id: course_id,
-        title: title,
-        creator_id: {
-          _id: user._id.toString(),
-          name: user.name,
-          role: creator_id === user._id.toString() ? 'thread master' : role, // Check if the creator is the current user
-        },
-        createdAt: new Date().toISOString(),
-        description: description,
-        messagesCount: 0, // Newly created thread will have no messages
-      };
-  
-      return {
-        statusCode: HttpStatus.OK,
-        message: 'Thread created successfully',
-        data: data,
-      };
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+  creator_id: string,
+  role: string,
+  course_id: string,
+  threadData: ThreadDto,
+) {
+  try {
+    // Check if the user is associated with the course
+    const enrolled = await this.isAssociatedWithCourse(creator_id, course_id);
+    if (!enrolled) {
       throw new HttpException(
-        `Database error: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'You are not associated with this course',
+        HttpStatus.UNAUTHORIZED,
       );
     }
+
+    const { title, description } = threadData;
+
+    // Create a new thread
+    const thread = new this.threadModel({
+      course_id: new Types.ObjectId(course_id),
+      creator_id: new Types.ObjectId(creator_id),
+      title,
+      description,
+    });
+
+    await this.threadModel.create(thread);
+
+    // Fetch additional details
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(course_id),
+    });
+    const user = await this.userModel.findOne({ _id: creator_id });
+
+    const type = role === 'instructor' ? 'Announcement' : 'Thread';
+
+    // Get the list of course members
+    const members_list = await this.getMembersList(course_id);
+
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New ${type}`,
+      `You have a new ${type} in ${course.title} from ${user.name}: ${title}`,
+      'thread',
+    );
+
+    // Build the response structure
+    const data = {
+      _id: thread._id.toString(),
+      course_id: course_id,
+      title: title,
+      creator_id: {
+        _id: user._id.toString(),
+        name: user.name,
+        role: creator_id === user._id.toString() ? 'thread master' : role, // Check if the creator is the current user
+      },
+      createdAt: new Date().toISOString(),
+      description: description,
+      messagesCount: 0, // Newly created thread will have no messages
+    };
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Thread created successfully',
+      data: data,
+    };
+  } catch (error) {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+    throw new HttpException(
+      `Database error: ${error.message}`,
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
-  
+}
+
 
   async sendMessageToThread(
     userId: string,
@@ -967,13 +972,15 @@ export class ChatService {
 
     const activeUsers = await this.userModel
       .find({
-        _id: { $in: userIds },
+        _id: { $in: userIds, $ne: user_id },
         isActive: true,
       })
       .select('name _id');
-    return activeUsers.map((user) => ({
+    return {
+    data: activeUsers.map((user) => ({
       user_id: user._id,
       name: user.name,
-    }));
+    }))
+    };
   }
 }

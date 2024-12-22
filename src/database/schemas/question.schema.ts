@@ -21,12 +21,6 @@ export class Question extends Document {
 
   @Prop({ 
     required: true,
-    validate: {
-      validator: function(choice: string) {
-        return this.choices.includes(choice);
-      },
-      message: 'Right choice must be one of the provided choices'
-    }
    })
   right_choice: string;
 

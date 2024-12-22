@@ -58,6 +58,7 @@ export class QuizService {
 
     return {
         quizResponse,
+        questionContent: selectedQuestions.map(q => q.question),
         choices: selectedQuestions.map(q => q.choices)
     }
   }

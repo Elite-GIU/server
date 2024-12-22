@@ -13,7 +13,7 @@ export class InstructorService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async getInstructors(page: number, limit: number, name?: string): Promise<InstructorDataDto[]> {
+  async getInstructors(page: number, limit: number, name?: string) {
     if (page < 1 || limit < 1) {
       throw new BadRequestException('Page and limit must be positive integers');
     }
@@ -37,7 +37,17 @@ export class InstructorService {
       throw new NotFoundException('No instructors found');
     }
 
-    return filteredInstructors;
+    const totalInstructors = await this.userModel.countDocuments(query);
+    const totalPages = Math.ceil(totalInstructors / limit);
+
+    return {
+      instructors: filteredInstructors,
+      pagination: {
+      currentPage: page,
+      totalPages,
+      totalInstructors,
+      },
+    };
   }
 
   public calculateAverageRatings(votes: number[]): number {
