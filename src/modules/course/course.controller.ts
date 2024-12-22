@@ -250,5 +250,37 @@ export class CourseController {
       return await this.courseService.deleteCourse(course.id);   
 
   }
+
+  @Get('admin/courses')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin: Retrieve all courses or search by name or instructor name' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'The name of the course to search for (case-insensitive) or keyword',
+    example: 'Python',
+  })
+  @ApiQuery({
+    name: 'instructorName',
+    required: false,
+    description: 'The name of the instructor to search for (case-insensitive)',
+    example: 'John Doe',
+  })
+  @ApiQuery({ name: 'page', required: false, description: 'Get page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of courses successfully retrieved. with pagination details',
+  })
+  @ApiResponse({ status: 404, description: 'No courses found.' })
+  async getAllCoursesAdmin(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('name') name: string,
+    @Query('instructorName') instructorName: string,
+  ) {
+    return await this.courseService.getAllCoursesAdminPage(page, limit, name, instructorName);
+  }
 }
   

@@ -17,6 +17,9 @@ export class RoomMessage extends Document {
 
   @Prop({ type: String, required: true })
   content: string;
+    
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const RoomMessageSchema = SchemaFactory.createForClass(RoomMessage);

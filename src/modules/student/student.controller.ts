@@ -1,7 +1,7 @@
-import { Controller, Get, Delete, UseGuards, Res, NotFoundException, StreamableFile, Param } from '@nestjs/common';
+import { Controller, Get, Delete, UseGuards, Res, NotFoundException, StreamableFile, Param, Query } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { StudentGuard } from 'src/common/guards/student.guard';
 import { ApiTags } from '@nestjs/swagger';
@@ -52,4 +52,28 @@ export class StudentController {
     @GetUser('userId') userId: string) {
     return this.studentService.deleteStudent(user.id);
   }
+
+    @Get('admin/students')
+    @UseGuards(AdminGuard)
+    @ApiOperation({ summary: 'Admin: Retrieve all students or search by name' })
+    @ApiQuery({
+      name: 'name',
+      required: false,
+      description: 'The name of the student',
+      example: 'Sarah',
+    })
+    @ApiQuery({ name: 'page', required: false, description: 'Get page number' })
+    @ApiQuery({ name: 'limit', required: false, description: 'Set page limit' })
+    @ApiResponse({
+      status: 200,
+      description: 'List of students successfully retrieved. with pagination details',
+    })
+    @ApiResponse({ status: 404, description: 'No students found.' })
+    async getAllCoursesAdmin(
+      @Query('page') page = 1,
+      @Query('limit') limit = 10,
+      @Query('name') name: string,
+    ) {
+      return await this.studentService.getAllStudents(page, limit, name);
+    }
 }
