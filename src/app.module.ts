@@ -16,6 +16,7 @@ import { StudentModule } from './modules/student/student.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { QuestionModule } from './modules/question/question.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { BackupService } from './backup.service';
 import { ChatGateway } from './chat.gateway';
 
 @Module({
@@ -38,6 +39,7 @@ import { ChatGateway } from './chat.gateway';
     NotificationModule
   ],
   controllers: [AppController],
-  providers: [AppService, ChatGateway],
+  providers: [AppService, ChatGateway, BackupService],
+
 })
 export class AppModule {}
