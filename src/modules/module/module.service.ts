@@ -47,7 +47,7 @@ export class ModuleService {
   
     // Handle case when no modules are found
     if (!modules.length) {
-      throw new NotFoundException(`No modules found for course with ID ${courseId}`);
+      return [];
     }
   
      // Sort the nested `content` array within each module
