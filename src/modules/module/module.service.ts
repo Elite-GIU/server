@@ -237,10 +237,10 @@ export class ModuleService {
       const existingContentTitle = await this.contentModel.findOne({
         title: updateContentDto.title,
       });
-      if (existingContentTitle) {
-        fs.unlinkSync(filePath);
-        throw new BadRequestException('Content with the same title already exists.');
-      }
+      // if (existingContentTitle) {
+      //   fs.unlinkSync(filePath);
+      //   throw new BadRequestException('Content with the same title already exists.');
+      // }
 
       const content = await this.contentModel.create({
         title: updateContentDto.title || existingContent.title,
