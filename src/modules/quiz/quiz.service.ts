@@ -45,6 +45,9 @@ export class QuizService {
       eligibleQuestions = this.filterQuestionsByType(eligibleQuestions, module.assessmentType);
     }
 
+    if (!eligibleQuestions.length || eligibleQuestions.length<module.numberOfQuestions) 
+      throw new NotFoundException('No quizzes for you at the moment');
+
     const selectedQuestions = this.getRandomQuestions(
       eligibleQuestions, 
       module.numberOfQuestions
