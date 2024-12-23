@@ -7,13 +7,16 @@ import { Question } from '../../database/schemas/question.schema';
 import { CreateModuleDto } from './dto/CreateModuleDto';
 import { GetModuleDto } from './dto/GetModuleDto';
 import { Content } from '../../database/schemas/content.schema';
+import { Notification } from '../../database/schemas/notification.schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UpdateContentDto } from './dto/UpdateContentDto';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 import { plainToInstance } from 'class-transformer';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
-
+import { ChatService } from '../chat/chat.service';
+import { Course } from 'src/database/schemas/course.schema';
+import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 @Injectable()
 export class ModuleService {
   constructor(
@@ -22,6 +25,10 @@ export class ModuleService {
     @InjectModel(Content.name) private readonly contentModel: Model<Content>,
     @InjectModel(Question.name) private readonly questionModel: Model<Question>,
     @InjectModel(QuizResponse.name) private readonly quizResponseModel: Model<QuizResponse>,
+    @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+    @InjectModel(Course.name) private readonly courseModel: Model<Course>,
+    @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
+
   ) {}
 
   // Function to get all modules for a course with a given courseId
@@ -170,6 +177,19 @@ export class ModuleService {
     });
     await questionbank.save();
 
+    const members_list = await this.getMembersList(courseId);
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(courseId),
+    });
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New module`,
+      `You have a new module in ${course.title}`,
+      'thread',
+    );
+    
+
     return {
       newModule,
     };
@@ -210,6 +230,22 @@ export class ModuleService {
         },
         { new: true, runValidators: true }
       );
+
+    // Get courseId
+    const module = await this.moduleModel.findOne({ _id: moduleId });
+    const courseId: string = module.course_id + '';
+    const members_list = await this.getMembersList(courseId);
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(courseId),
+    });
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New content`,
+      `You have new content: ${uploadContentDto.title} in ${course.title}`,
+      'thread',
+    );
+
 
       return {
         content,
@@ -351,4 +387,39 @@ export class ModuleService {
     return module;
   }
 
+  async getMembersList(course_id: string) {
+    
+    const notify_list = await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .select('user_id');
+
+    
+    return notify_list;
+  }
+
+  async sendNotification(
+    notify_list: any,
+    title: string,
+    message: string,
+    type: string,
+  ) {
+    var transformedNotifyList;
+    if (type === 'thread') {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member.user_id),
+      );
+    } else {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member),
+      );
+    }
+    await this.notificationModel.create({
+      notify_list: transformedNotifyList,
+      title: title,
+      message: message,
+      type: type,
+    });
+  }
 }
