@@ -15,13 +15,19 @@ export class StudentService {
     // Validate user existence
     const user = await this.userModel.findById(userId);
     if (!user) throw new NotFoundException('User not found');
+    const query: Record<string, any> = {
+      $or: [
+        // Case-insensitive partial match for category (user's preferences)
+        { category: { $in: user.preferences.map(pref => new RegExp(pref, 'i')) } },
+        // Case-insensitive partial match for title
+        { title: { $in: user.preferences.map(pref => new RegExp(pref, 'i')) } },
+      ],
+    };
 
     // Match courses based on user preferences and exclude already enrolled courses
     const courses = await this.courseModel.aggregate([
       {
-        $match: {
-          category: { $in: user.preferences }, // Match user preferences
-        },
+        $match: query,
       },
       {
         $lookup: {

@@ -170,7 +170,7 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
   async getStudentCourseWithModules(courseId: string) {
     const course = await this.courseModel.findById(courseId);
     const modules = await this.moduleModel
-      .find({ course_id: course._id })
+      .find({ course_id: course._id, isDeleted: false })
       .select('-content -resources')
       .sort({ created_at: 1 });
   

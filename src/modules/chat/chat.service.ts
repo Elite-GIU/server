@@ -889,6 +889,38 @@ export class ChatService {
     }
   }
 
+  async searchThreads(userId: string, course_id: string, title: string) {
+    try {
+      const enrolled = await this.isAssociatedWithCourse(userId, course_id);
+      if (!enrolled) {
+        throw new HttpException(
+          'You are not associated with this course',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const threads = await this.threadModel
+        .find({
+          course_id: new Types.ObjectId(course_id),
+          title: { $regex: new RegExp(title, 'i') },
+        })
+        .populate('creator_id', 'name role')
+        .sort({ createdAt: -1 });
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'Threads fetched successfully',
+        data: threads,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `Database error: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  
   async deleteThread(
     userId: string,
     role: string,

@@ -3,6 +3,13 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateModuleAssessmentDto {
   @ApiProperty({
+    description: 'Title of the assessment',
+    example: 'Module 1 Assessment',
+  })
+  @IsOptional()
+  title: string;
+
+  @ApiProperty({
     description: 'Type of assessment',
     example: 'mcq',
     enum: ['mcq', 'true_false', 'mix'],

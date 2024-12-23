@@ -7,13 +7,16 @@ import { Question } from '../../database/schemas/question.schema';
 import { CreateModuleDto } from './dto/CreateModuleDto';
 import { GetModuleDto } from './dto/GetModuleDto';
 import { Content } from '../../database/schemas/content.schema';
+import { Notification } from '../../database/schemas/notification.schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UpdateContentDto } from './dto/UpdateContentDto';
 import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
 import { plainToInstance } from 'class-transformer';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
-
+import { ChatService } from '../chat/chat.service';
+import { Course } from 'src/database/schemas/course.schema';
+import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
 @Injectable()
 export class ModuleService {
   constructor(
@@ -22,6 +25,10 @@ export class ModuleService {
     @InjectModel(Content.name) private readonly contentModel: Model<Content>,
     @InjectModel(Question.name) private readonly questionModel: Model<Question>,
     @InjectModel(QuizResponse.name) private readonly quizResponseModel: Model<QuizResponse>,
+    @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+    @InjectModel(Course.name) private readonly courseModel: Model<Course>,
+    @InjectModel(StudentCourse.name) private readonly studentCourseModel: Model<StudentCourse>,
+
   ) {}
 
   // Function to get all modules for a course with a given courseId
@@ -40,14 +47,14 @@ export class ModuleService {
     // Fetch and sort modules based on created_at field of the module
     // Populate the `content` field in each module
     const modules = await this.moduleModel
-      .find({ course_id: courseIdObject })
+      .find({ course_id: courseIdObject, isDeleted: false })
       .populate('content')
       .sort({ created_at: sortOrder as 'asc' | 'desc' }) 
       .exec();
   
     // Handle case when no modules are found
     if (!modules.length) {
-      throw new NotFoundException(`No modules found for course with ID ${courseId}`);
+      return [];
     }
   
      // Sort the nested `content` array within each module
@@ -85,7 +92,7 @@ export class ModuleService {
 
     // Fetch the module with the given ID and populate the `content` field
     const module = await this.moduleModel
-      .findOne({ _id: moduleIdObject, course_id: courseIdObject })
+      .findOne({ _id: moduleIdObject, course_id: courseIdObject, isDeleted: false })
       .populate('content')
       .exec();
 
@@ -99,11 +106,11 @@ export class ModuleService {
     const moduleIdObject = new Types.ObjectId(moduleId);
     const studentIdObject = new Types.ObjectId(userId);
 
-    const modules = await this.moduleModel.find({ course_id: courseIdObject }).sort({ created_at: 1 });
+    const modules = await this.moduleModel.find({ course_id: courseIdObject , isDeleted: false}).sort({ created_at: 1 });
     const currentModuleIndex = modules.findIndex(module => module._id.toString() === moduleIdObject.toString());
 
     if (currentModuleIndex === -1) {
-      throw new Error('Module not found.');
+      throw new NotFoundException('Module not found.');
     }
 
     if (currentModuleIndex!==0){
@@ -170,6 +177,19 @@ export class ModuleService {
     });
     await questionbank.save();
 
+    const members_list = await this.getMembersList(courseId);
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(courseId),
+    });
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New module`,
+      `You have a new module in ${course.title}`,
+      'thread',
+    );
+    
+
     return {
       newModule,
     };
@@ -210,6 +230,22 @@ export class ModuleService {
         },
         { new: true, runValidators: true }
       );
+
+    // Get courseId
+    const module = await this.moduleModel.findOne({ _id: moduleId });
+    const courseId: string = module.course_id + '';
+    const members_list = await this.getMembersList(courseId);
+    const course = await this.courseModel.findOne({
+      _id: new Types.ObjectId(courseId),
+    });
+    // Send notification to course members
+    await this.sendNotification(
+      members_list,
+      `New content`,
+      `You have new content: ${uploadContentDto.title} in ${course.title}`,
+      'thread',
+    );
+
 
       return {
         content,
@@ -280,6 +316,7 @@ export class ModuleService {
     if (!content) throw new NotFoundException('Content not found');
     return content;
   }
+
   async updateModule(
     courseId: string,
     moduleId: string,
@@ -287,6 +324,7 @@ export class ModuleService {
       assessmentType?: string;
       numberOfQuestions?: number;
       passingGrade?: number;
+      title?: string;
     },
     userId: string,
   ) {
@@ -305,6 +343,7 @@ export class ModuleService {
     const updatedModule = await this.moduleModel.findByIdAndUpdate(
       moduleIdObject,
       {
+        ...(updateData.title && { title: updateData.title }),
         ...(updateData.assessmentType && { assessmentType: updateData.assessmentType }),
         ...(updateData.numberOfQuestions && { numberOfQuestions: updateData.numberOfQuestions }),
         ...(updateData.passingGrade && { passingGrade: updateData.passingGrade }),
@@ -341,4 +380,46 @@ export class ModuleService {
     return content;
   }
 
+  async deleteModule(moduleId: string): Promise<ModuleEntity> {
+    const module = await this.moduleModel.findById(moduleId);
+    module.isDeleted = true;
+    await module.save();
+    return module;
+  }
+
+  async getMembersList(course_id: string) {
+    
+    const notify_list = await this.studentCourseModel
+      .find({
+        course_id: new Types.ObjectId(course_id),
+      })
+      .select('user_id');
+
+    
+    return notify_list;
+  }
+
+  async sendNotification(
+    notify_list: any,
+    title: string,
+    message: string,
+    type: string,
+  ) {
+    var transformedNotifyList;
+    if (type === 'thread') {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member.user_id),
+      );
+    } else {
+      transformedNotifyList = notify_list.map(
+        (member) => new Types.ObjectId(member),
+      );
+    }
+    await this.notificationModel.create({
+      notify_list: transformedNotifyList,
+      title: title,
+      message: message,
+      type: type,
+    });
+  }
 }

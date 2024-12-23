@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Put, Res, BadRequestException, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Put, Res, BadRequestException, NotFoundException, InternalServerErrorException, UseGuards, Get } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -6,6 +6,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RegisterUserDto } from './dto/RegisterUserDto';
 import { LoginUserDto } from './dto/LoginUserDto';
@@ -14,6 +15,7 @@ import { WebAuthnDto } from './dto/webauthn.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { GetUser } from 'src/common/decorators/getUser.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -56,6 +58,17 @@ export class AuthController {
   async login(@Body() userData: LoginUserDto, @Res() response: Response) {
     return this.authService.login(userData, response);
   }
+
+  @Get('get-active-session')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Active Session' })
+  @ApiResponse({ status: 200, description: 'Active session returned' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async getActiveSession(@GetUser('email') email: string) {
+    return this.authService.getActiveSession(email);
+  }
+
 
   @Post('check-biometric-auth')
   @Public()
