@@ -2,8 +2,6 @@ import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { LogsService } from './logs.service';
 import { Log } from 'src/database/schemas/log.schema';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AdminGuard } from 'src/common/guards/admin.guard';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('Logs')
@@ -34,11 +32,4 @@ async addLog(@Body() logData: Partial<Log>) {
     return this.logsService.addLog(logData);
 }
 
-  @Get()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({ summary: 'Get all logs' })
-  @ApiResponse({ status: 200, description: 'Logs retrieved successfully' })
-  async getLogs() {
-    return this.logsService.getLogs();
-  }
 }

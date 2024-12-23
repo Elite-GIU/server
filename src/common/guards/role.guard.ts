@@ -8,6 +8,7 @@ export class RoleGuard implements CanActivate {
   constructor(private readonly allowedRoles: string[], private readonly allowAdminBypass: boolean = true, private readonly logsService: LogsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    try{
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
@@ -16,7 +17,6 @@ export class RoleGuard implements CanActivate {
       status: 200,
       timestamp: new Date().toISOString(),
       type: 'auth',
-      ip: request.ip
     }));
 
     if (!user) {
@@ -25,7 +25,6 @@ export class RoleGuard implements CanActivate {
         status: 401,
         timestamp: new Date().toISOString(),
         type: 'auth',
-        ip: request.ip
       }));
       throw new ForbiddenException('User is not authenticated');
     }
@@ -37,7 +36,6 @@ export class RoleGuard implements CanActivate {
         status: 200,
         timestamp: new Date().toISOString(),
         type: 'auth',
-        ip: request.ip
       }));
       return true;
     }
@@ -49,7 +47,6 @@ export class RoleGuard implements CanActivate {
         status: 403,
         timestamp: new Date().toISOString(),
         type: 'auth',
-        ip: request.ip
       }));
       throw new ForbiddenException('User is deleted');
     }
@@ -61,7 +58,6 @@ export class RoleGuard implements CanActivate {
         status: 200,
         timestamp: new Date().toISOString(),
         type: 'auth',
-        ip: request.ip
       }));
       return true;
     }
@@ -72,8 +68,12 @@ export class RoleGuard implements CanActivate {
       status: 403,
       timestamp: new Date().toISOString(),
       type: 'auth',
-      ip: request.ip
     }));
     throw new ForbiddenException('You do not have access to this resource');
+  }catch(e){
+    console.log(e);
+    throw new ForbiddenException('You do not have access to this resource manga');
+  }
+  return true;
   }
 }

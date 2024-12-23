@@ -3,10 +3,12 @@ import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { LogsModule } from '../logs/logs.module';
+import { LogsService } from '../logs/logs.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, LogsModule],
   controllers: [QuizController],
-  providers: [QuizService, DashboardService]
+  providers: [QuizService, DashboardService, LogsService]
 })
 export class QuizModule {}

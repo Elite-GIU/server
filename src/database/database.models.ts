@@ -50,5 +50,5 @@ export const DatabaseModels = MongooseModule.forFeature([
   { name: ThreadMessageReply.name, schema: ThreadMessageReplySchema },
   { name: User.name, schema: UserSchema },
   { name: StudyRoom.name, schema: StudyRoomSchema },
-  { name: CourseArchive.name, schema: CourseArchiveSchema}
+  { name: CourseArchive.name, schema: CourseArchiveSchema},
 ]);

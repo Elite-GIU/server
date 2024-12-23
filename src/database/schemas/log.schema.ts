@@ -17,9 +17,6 @@ export class Log extends Document {
 
   @Prop({ required: true, enum: ['auth', 'general'] })
   type: string;
-
-  @Prop({ required: true })
-  ip?: string;
 }
 
 export const LogSchema = SchemaFactory.createForClass(Log);

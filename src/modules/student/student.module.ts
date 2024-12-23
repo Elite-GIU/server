@@ -14,17 +14,17 @@ import {
 } from '../../database/schemas/module.schema';
 import { Content, ContentSchema } from '../../database/schemas/content.schema';
 import { AuthModule } from '../auth/auth.module';
+import { LogsModule } from '../logs/logs.module'; // Add this import
+import { LogsService } from '../logs/logs.service';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Course.name, schema: CourseSchema },
-      { name: User.name, schema: UserSchema },
-      { name: StudentCourse.name, schema: StudentCourseSchema },
-    ]),
+    LogsModule,
+    DatabaseModule,
     AuthModule,
   ],
   controllers: [StudentController],
-  providers: [StudentService],
+  providers: [StudentService,LogsService],
 })
 export class StudentModule {}

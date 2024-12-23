@@ -160,11 +160,15 @@ async updateInstructorCourse(updateCourseDto: UpdateCourseDto, instructor_id: st
 }
 
   async getStudentCourses(userId: string) {
+    try{
     const studentCourses = await this.studentCourseModel
       .find({ user_id: new Types.ObjectId(userId) })
       .populate('course_id');
-  
-    return studentCourses.map(studentCourse => studentCourse.course_id);
+    }catch(e){
+      console.log(e);
+      throw new NotFoundException('No courses found for this student');
+    }
+    return null;
   }
 
   async getStudentCourseWithModules(courseId: string) {
