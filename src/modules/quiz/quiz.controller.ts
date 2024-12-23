@@ -79,33 +79,18 @@ export class QuizController {
 
   @UseGuards(JwtAuthGuard, StudentGuard)
   @ApiBearerAuth()
-  @Get('student/courses/:courseId/modules/:moduleId/quiz/:quizId/feedback')
+  @Get('student/quiz/:quizId/feedback')
   @ApiOperation({ summary: 'Get quiz feedback for a student' })
   @ApiResponse({ status: 200, description: 'Quiz feedback retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid course or module ID' })
-  @ApiParam({ name: 'courseId', type: String, description: 'The ID of the course' })
-  @ApiParam({ name: 'moduleId', type: String, description: 'The ID of the module' })
   @ApiParam({ name: 'quizId', type: String, description: 'The ID of the quiz response' })
   async getQuizFeedback(
-    @AssignedParam({
-        modelName: 'StudentCourse',
-        firstAttrName: 'user_id',
-        secondAttrName: 'course_id',
-        firstKey: 'userId',
-        secondKey: 'courseId'
-    }, CheckAssignedValidatorPipe) studentCourse: { course_id: string },
-    @AssignedParam({
-        modelName: 'ModuleEntity',
-        firstAttrName: 'course_id',
-        secondAttrName: '_id',
-        firstKey: 'courseId',
-        secondKey: 'moduleId'
-    }, CheckAssignedValidatorPipe) module: { _id: string },
+    @GetUser('userId') userId: string,
     @AssignedParam({
         modelName: 'QuizResponse',
-        firstAttrName: 'module_id',
+        firstAttrName: 'user_id',
         secondAttrName: '_id',
-        firstKey: 'moduleId',
+        firstKey: 'userId',
         secondKey: 'quizId'
     }, CheckAssignedValidatorPipe) quizResponse: { _id: string },
   ) {
