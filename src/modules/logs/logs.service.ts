@@ -13,6 +13,6 @@ export class LogsService {
   }
 
   async getLogs(): Promise<Log[]> {
-    return this.logModel.find().exec();
+    return this.logModel.find().sort({ createdAt: -1 }).limit(100).exec();
   }
 }
