@@ -6,10 +6,13 @@ import { ModuleSchema, ModuleEntity } from 'src/database/schemas/module.schema';
 import { Questionbank, QuestionbankSchema } from '../../database/schemas/questionbank.schema';
 import { Question, QuestionSchema } from '../../database/schemas/question.schema'; 
 import { DatabaseModule } from 'src/database/database.module';
+import { Log } from 'src/database/schemas/log.schema';
+import { LogsModule } from '../logs/logs.module';
+import { LogsService } from '../logs/logs.service';
 
 @Module({
-  imports: [ DatabaseModule],
-  providers: [QuestionService],
+  imports: [ DatabaseModule, LogsModule],
+  providers: [QuestionService,  LogsService],
   controllers: [QuestionController],
 })
 export class QuestionModule {}

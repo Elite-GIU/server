@@ -7,10 +7,13 @@ import { StudentCourse, StudentCourseSchema } from '../../database/schemas/stude
 import { User, UserSchema } from '../../database/schemas/user.schema';
 import { CourseService } from '../course/course.service';
 import { DatabaseModule } from 'src/database/database.module';
+import { Log } from 'src/database/schemas/log.schema';
+import { LogsService } from '../logs/logs.service';
+import { LogsModule } from '../logs/logs.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule,LogsModule],
   controllers: [InstructorController],
-  providers: [InstructorService, CourseService]
+  providers: [InstructorService, CourseService, LogsService]
 })
 export class InstructorModule {}
