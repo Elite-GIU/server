@@ -29,6 +29,9 @@ export class ModuleEntity extends Document {
 
   @Prop({ type: [Number], default: [0, 0, 0, 0, 0], required: true })
   ratings: number[];
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(ModuleEntity);

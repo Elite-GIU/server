@@ -551,5 +551,42 @@ async getContent(
         
         fileStream.pipe(response);
     }
+
+    @Delete('instructor/courses/:courseId/modules/:moduleId')
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, InstructorGuard)
+    @ApiOperation({ summary: 'Delete a specific module within a course' })
+    @ApiParam({ name: 'courseId', description: 'ID of the course containing the module' })
+    @ApiParam({ name: 'moduleId', description: 'ID of the module to update' })
+    @ApiResponse({ status: 200, description: 'Module deleted successfully' })
+    @ApiResponse({ status: 400, description: 'Bad Request: Invalid input data' })
+    @ApiResponse({ status: 404, description: 'Not Found: Module not found in the course' })
+    async deleteModule(
+      @Param('courseId') courseId: string,
+      @Param('moduleId') moduleId: string,
+      @GetUser('userId') userId: string,
+      @AssignedParam(
+        {
+          modelName: 'Course',
+          firstAttrName: 'instructor_id',
+          secondAttrName: '_id',
+          firstKey: 'userId',
+          secondKey: 'courseId',
+        },
+        CheckAssignedValidatorPipe,
+      ) course: { _id: string },
+      @AssignedParam(
+        {
+          modelName: 'ModuleEntity',
+          firstAttrName: 'course_id',
+          secondAttrName: '_id',
+          firstKey: 'courseId',
+          secondKey: 'moduleId',
+        },
+        CheckAssignedValidatorPipe,
+      ) module: { _id: string },
+    ) {
+      return this.moduleService.deleteModule(moduleId);
+    }  
   }
 
