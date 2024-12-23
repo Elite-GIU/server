@@ -7,9 +7,11 @@ import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
-    DatabaseModule
+    DatabaseModule,
+    MongooseModule.forFeature([{ name: Log.name, schema: LogSchema }]),
   ],
   controllers: [LogsController],
-  providers: [LogsService]
+  providers: [LogsService],
+  exports: [LogsService], // Ensure LogsService is exported
 })
 export class LogsModule {}

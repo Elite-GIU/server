@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
 import { JwtConfig } from '../../config/jwt.config';
+import { LogsModule } from '../logs/logs.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { JwtConfig } from '../../config/jwt.config';
     }),
     UserModule,
     ConfigModule,
+    LogsModule, 
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

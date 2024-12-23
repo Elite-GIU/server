@@ -10,13 +10,6 @@ export class RoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
-    this.logsService.addLog({
-      event: 'RoleGuard canActivate called',
-      status: 200,
-      timestamp: new Date(),
-      type: 'auth',
-    });
 
     if (!user) {
       this.logsService.addLog({
@@ -29,19 +22,12 @@ export class RoleGuard implements CanActivate {
     }
 
     if (this.allowAdminBypass && user.role === 'admin') {
-      this.logsService.addLog({
-        user_id:user._id,
-        event: 'Admin bypass allowed',
-        status: 200,
-        timestamp: new Date(),
-        type: 'auth',
-      });
       return true;
     }
     
     if (user.isActive === false) {
       this.logsService.addLog({
-        user_id:user._id,
+        user_id:user.userId,
         event: 'User is deleted',
         status: 403,
         timestamp: new Date(),
@@ -51,18 +37,11 @@ export class RoleGuard implements CanActivate {
     }
 
     if (this.allowedRoles.includes(user.role)) {
-      this.logsService.addLog({
-        user_id:user._id,
-        event: 'User role is allowed '+user.role,
-        status: 200,
-        timestamp: new Date(),
-        type: 'auth',
-      });
       return true;
     }
-
+    
     this.logsService.addLog({
-      user_id:user._id,
+      user_id:user.userId,
       event: 'User does not have access' +user.role,
       status: 403,
       timestamp: new Date(),

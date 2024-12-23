@@ -20,6 +20,7 @@ import { AuthenticationResponseJSON, generateAuthenticationOptions, generateRegi
 import { RegistrationResponseJSON } from '@simplewebauthn/types';
 import { TextEncoder } from 'util'; 
 import * as crypto from 'crypto';
+import { LogsService } from '../logs/logs.service';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
+    private readonly logsService: LogsService,
   ) {
     this.validateEnvironment();
   }
@@ -238,6 +240,13 @@ export class AuthService {
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
+        this.logsService.addLog({
+          user_id:user.id,
+          event: 'INVALID_CREDENTIALS',
+          status: 401,
+          timestamp: new Date(),
+          type: 'auth',
+        });
         throw new UnauthorizedException({
           statusCode: 401,
           errorCode: 'INVALID_CREDENTIALS',
@@ -246,6 +255,13 @@ export class AuthService {
       }
 
       if(user.isActive === false) {
+        this.logsService.addLog({
+          user_id:user.id,
+          event: 'User Deleted',
+          status: 401,
+          timestamp: new Date(),
+          type: 'auth',
+        });
         throw new UnauthorizedException({
           statusCode: 401,
           errorCode: 'USER_DELETED',
@@ -283,6 +299,13 @@ export class AuthService {
   // Validate user for login
   private validateUserForLogin(user: any) {
     if (!user) {
+      this.logsService.addLog({
+        user_id:user.id,
+        event: 'INVALID_CREDENTIALSS',
+        status: 401,
+        timestamp: new Date(),
+        type: 'auth',
+      });
       throw new UnauthorizedException({
         statusCode: 401,
         errorCode: 'INVALID_CREDENTIALS',
@@ -290,6 +313,13 @@ export class AuthService {
       });
     }
     if (!user.isEmailVerified) {
+      this.logsService.addLog({
+        user_id:user.id,
+        event: 'Email not verified',
+        status: 401,
+        timestamp: new Date(),
+        type: 'auth',
+      });
       throw new UnauthorizedException({
         statusCode: 401,
         errorCode: 'EMAIL_NOT_VERIFIED',
