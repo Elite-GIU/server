@@ -208,10 +208,10 @@ export class ModuleService {
       const existingContent = await this.contentModel.findOne({
         title: uploadContentDto.title,
       });
-      if (existingContent) {
-        fs.unlinkSync(filePath);
-        throw new BadRequestException('Content with the same title already exists.');
-      }
+      // if (existingContent) {
+      //   fs.unlinkSync(filePath);
+      //   throw new BadRequestException('Content with the same title already exists.');
+      // }
 
       // Create content
       const content = await this.contentModel.create({
