@@ -259,7 +259,7 @@ export class AuthService {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax', 
-        expires: new Date(Date.now() + 3600000),
+        expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
       });
 
       response.status(201).json({
@@ -301,11 +301,22 @@ export class AuthService {
   // Generate a JWT token
   private generateJwt(user: any) {
     const payload = { userId: user._id, email: user.email, role: user.role };
-    return {
-      access_token: this.jwtService.sign(payload, {
-        expiresIn: '1h',
-      }),
-    };
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '15d', 
+    });
+    
+    user.sessionIdentifier = accessToken;
+    this.userService.update(user);
+    
+    return { access_token: accessToken };
+  }
+
+  public async getActiveSession(email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    return user.sessionIdentifier;
   }
 
   // Verify user uniqueness by email
@@ -548,7 +559,7 @@ export class AuthService {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict', 
-        expires: new Date(Date.now() + 3600000),  
+        expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
       });
 
       res.status(200).json({

@@ -65,6 +65,10 @@ export class User extends Document {
 
   @Prop({ default: true })
   isActive: boolean;
+  
+  @Prop()
+  sessionIdentifier?: string;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
