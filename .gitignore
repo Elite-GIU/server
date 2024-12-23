@@ -4,6 +4,7 @@ node_modules/
 # TypeScript build output
 dist/
 build/
+public/
 
 # Logs
 *.log
@@ -47,3 +48,4 @@ coverage/
 
 # Dependencies (local package manager files, like yarn or npm)
 yarn.lock
+.vercel
