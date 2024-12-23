@@ -40,7 +40,7 @@ export class ModuleService {
     // Fetch and sort modules based on created_at field of the module
     // Populate the `content` field in each module
     const modules = await this.moduleModel
-      .find({ course_id: courseIdObject })
+      .find({ course_id: courseIdObject, isDeleted: false })
       .populate('content')
       .sort({ created_at: sortOrder as 'asc' | 'desc' }) 
       .exec();
@@ -85,7 +85,7 @@ export class ModuleService {
 
     // Fetch the module with the given ID and populate the `content` field
     const module = await this.moduleModel
-      .findOne({ _id: moduleIdObject, course_id: courseIdObject })
+      .findOne({ _id: moduleIdObject, course_id: courseIdObject, isDeleted: false })
       .populate('content')
       .exec();
 
@@ -99,11 +99,11 @@ export class ModuleService {
     const moduleIdObject = new Types.ObjectId(moduleId);
     const studentIdObject = new Types.ObjectId(userId);
 
-    const modules = await this.moduleModel.find({ course_id: courseIdObject }).sort({ created_at: 1 });
+    const modules = await this.moduleModel.find({ course_id: courseIdObject , isDeleted: false}).sort({ created_at: 1 });
     const currentModuleIndex = modules.findIndex(module => module._id.toString() === moduleIdObject.toString());
 
     if (currentModuleIndex === -1) {
-      throw new Error('Module not found.');
+      throw new NotFoundException('Module not found.');
     }
 
     if (currentModuleIndex!==0){
@@ -339,6 +339,13 @@ export class ModuleService {
     }
 
     return content;
+  }
+
+  async deleteModule(moduleId: string): Promise<ModuleEntity> {
+    const module = await this.moduleModel.findById(moduleId);
+    module.isDeleted = true;
+    await module.save();
+    return module;
   }
 
 }
