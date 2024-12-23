@@ -176,7 +176,7 @@ export class QuizService {
     } else {
       completedModules = 1;
     }
-    const totalModules = await this.moduleModel.countDocuments({ course_id }).exec();
+    const totalModules = await this.moduleModel.countDocuments({ course_id, isDeleted:false }).exec();
     const completionPercentage = (completedModules / totalModules) * 100;
 
     const module = await this.moduleModel.findById(module_id).exec();

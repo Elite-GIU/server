@@ -111,7 +111,7 @@ export class DashboardService {
   
 
   async getInstructorCourseDashboard(courseId: string) {
-    const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId) });
+    const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId), isDeleted:false });
     const moduleDetails = await this.getModuleDetails(modules);
     return moduleDetails;
   }
@@ -253,7 +253,7 @@ export class DashboardService {
 
   async getCourseAverageGrade(courseId: string) {
     try {
-      const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId) });
+      const modules = await this.modulesModel.find({ course_id: new Types.ObjectId(courseId), isDeleted:false });
 
       if (!modules || modules.length === 0) {
         return 0;
@@ -291,7 +291,7 @@ export class DashboardService {
 
   public async getHighestStudentQuizzesByCourse(userId: string, courseId: string) {
     const modules = await this.modulesModel.find(
-      { course_id: new Types.ObjectId(courseId) },
+      { course_id: new Types.ObjectId(courseId), isDeleted: false },
       { _id: 1 }
     );
   
