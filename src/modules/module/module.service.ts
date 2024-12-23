@@ -280,6 +280,7 @@ export class ModuleService {
     if (!content) throw new NotFoundException('Content not found');
     return content;
   }
+
   async updateModule(
     courseId: string,
     moduleId: string,
@@ -287,6 +288,7 @@ export class ModuleService {
       assessmentType?: string;
       numberOfQuestions?: number;
       passingGrade?: number;
+      title?: string;
     },
     userId: string,
   ) {
@@ -305,6 +307,7 @@ export class ModuleService {
     const updatedModule = await this.moduleModel.findByIdAndUpdate(
       moduleIdObject,
       {
+        ...(updateData.title && { title: updateData.title }),
         ...(updateData.assessmentType && { assessmentType: updateData.assessmentType }),
         ...(updateData.numberOfQuestions && { numberOfQuestions: updateData.numberOfQuestions }),
         ...(updateData.passingGrade && { passingGrade: updateData.passingGrade }),
