@@ -101,6 +101,7 @@ export class QuizService {
   async getQuizFeedback(quizResponseId: string) {
     const quizResponse_id = new Types.ObjectId(quizResponseId);
     const quizResponse = await this.quizResponseModel.findById(quizResponse_id).exec();
+    console.log(quizResponse);
 
     const questionAnswerMap = new Map(
         quizResponse.questions.map((qId, index) => [qId.toString(), quizResponse.answers[index]])
