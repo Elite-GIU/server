@@ -44,6 +44,7 @@
     "express": "^4.21.2",
     "mongoose": "^8.8.4",
     "multer": "^1.4.5-lts.1",
+    "nest": "^0.1.6",
     "node-cron": "^3.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -52,7 +53,8 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
