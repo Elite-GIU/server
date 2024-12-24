@@ -1,9 +1,9 @@
 import { Controller, Get, Param, Query, Res, UseGuards, UsePipes } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { InstructorGuard } from 'src/common/guards/instructor.guard';
-import { StudentGuard } from 'src/common/guards/student.guard';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { InstructorGuard } from '../../common/guards/instructor.guard';
+import { StudentGuard } from '../../common/guards/student.guard';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 import { Response } from 'express';
 import {
     ApiTags,
@@ -13,10 +13,10 @@ import {
     ApiParam,
     ApiQuery
   } from '@nestjs/swagger';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { ExistParam } from '../../common/decorators/existParam.decorator';
+import { CheckExistValidatorPipe } from '../../common/pipes/check-exist-validator.pipe';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth()

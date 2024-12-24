@@ -6,8 +6,8 @@ import { Course, CourseSchema } from '../../database/schemas/course.schema';
 import { StudentCourse, StudentCourseSchema } from '../../database/schemas/studentCourse.schema';
 import { User, UserSchema } from '../../database/schemas/user.schema';
 import { CourseService } from '../course/course.service';
-import { DatabaseModule } from 'src/database/database.module';
-import { Log } from 'src/database/schemas/log.schema';
+import { DatabaseModule } from '../../database/database.module';
+import { Log } from '../../database/schemas/log.schema';
 import { LogsService } from '../logs/logs.service';
 import { LogsModule } from '../logs/logs.module';
 

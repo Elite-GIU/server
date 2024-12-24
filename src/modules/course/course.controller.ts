@@ -13,19 +13,19 @@ import {
 } from '@nestjs/common';
 import { CourseService } from './course.service';
 import { JwtAuthGuard} from '../auth/jwt-auth.guard';
-import { InstructorGuard } from 'src/common/guards/instructor.guard';
+import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { StudentGuard } from '../../common/guards/student.guard';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators/public.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { CheckExistValidatorPipe } from '../../common/pipes/check-exist-validator.pipe';
+import { ExistParam } from '../../common/decorators/existParam.decorator';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
 import { AddRatingDto } from './dto/AddRatingDto';
-import { AdminGuard } from 'src/common/guards/admin.guard';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
 @ApiTags('Courses')
 @Controller()

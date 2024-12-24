@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Log, LogSchema } from 'src/database/schemas/log.schema'; // Ensure correct import
-import { LogsService } from 'src/modules/logs/logs.service';
+import { Log, LogSchema } from '../../database/schemas/log.schema'; // Ensure correct import
+import { LogsService } from '../../modules/logs/logs.service';
 
 @Injectable()
 export class RoleGuard implements CanActivate {

@@ -21,13 +21,13 @@ import {
 } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { MessageDto } from './dto/MessageDto';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { ExistParam } from '../../common/decorators/existParam.decorator';
+import { CheckExistValidatorPipe } from '../../common/pipes/check-exist-validator.pipe';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 import { ThreadDto } from './dto/ThreadDto';
 import { RoomDto } from './dto/RoomDto';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
 import { ThreadEditDto } from './dto/ThreadEditDto';
 @Controller('chat')
 @ApiTags('Chat')

@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ModuleEntity } from 'src/database/schemas/module.schema';
-import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
+import { ModuleEntity } from '../../database/schemas/module.schema';
+import { QuizResponse } from '../../database/schemas/quizResponse.schema';
 import { Question } from '../../database/schemas/question.schema';
 import { Questionbank } from '../../database/schemas/questionbank.schema';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
-import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
+import { StudentCourse } from '../../database/schemas/studentCourse.schema';
 
 @Injectable()
 export class QuizService {

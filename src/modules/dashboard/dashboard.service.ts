@@ -3,11 +3,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
 import { Model, Types } from 'mongoose';
-import { Course } from 'src/database/schemas/course.schema';
-import { ModuleEntity } from 'src/database/schemas/module.schema';
-import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
-import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
-import { User } from 'src/database/schemas/user.schema';
+import { Course } from '../../database/schemas/course.schema';
+import { ModuleEntity } from '../../database/schemas/module.schema';
+import { QuizResponse } from '../../database/schemas/quizResponse.schema';
+import { StudentCourse } from '../../database/schemas/studentCourse.schema';
+import { User } from '../../database/schemas/user.schema';
 
 @Injectable()
 export class DashboardService {

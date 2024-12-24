@@ -1,13 +1,13 @@
 import { Controller, Get, Delete, UseGuards, Res, NotFoundException, StreamableFile, Param, Query } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { StudentGuard } from 'src/common/guards/student.guard';
+import { StudentGuard } from '../../common/guards/student.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { AdminGuard } from 'src/common/guards/admin.guard';
+import { CheckExistValidatorPipe } from '../../common/pipes/check-exist-validator.pipe';
+import { ExistParam } from '../../common/decorators/existParam.decorator';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
 @Controller()
 @UseGuards(JwtAuthGuard)

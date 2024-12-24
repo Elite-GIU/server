@@ -4,11 +4,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { AssignStudentDto } from './dto/AssignStudentDto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators/public.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { CourseService } from '../course/course.service';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 
 
 @ApiTags('Instructor')

@@ -12,10 +12,10 @@ import { RegisterUserDto } from './dto/RegisterUserDto';
 import { LoginUserDto } from './dto/LoginUserDto';
 import { VerifyEmailDto } from './dto/VerifyEmailDto';
 import { WebAuthnDto } from './dto/webauthn.dto';
-import { Public } from 'src/common/decorators/public.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')

@@ -16,7 +16,7 @@ import { Content, ContentSchema } from '../../database/schemas/content.schema';
 import { AuthModule } from '../auth/auth.module';
 import { LogsModule } from '../logs/logs.module'; // Add this import
 import { LogsService } from '../logs/logs.service';
-import { DatabaseModule } from 'src/database/database.module';
+import { DatabaseModule } from '../../database/database.module';
 
 @Module({
   imports: [

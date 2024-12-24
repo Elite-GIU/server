@@ -3,12 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { Course } from '../../database/schemas/course.schema';
 import { StudentCourse } from '../../database/schemas/studentCourse.schema';
-import { User } from 'src/database/schemas/user.schema';
+import { User } from '../../database/schemas/user.schema';
 import { CreateCourseDto } from '../course/dto/CreateCourseDto';
 import { UpdateCourseDto } from '../course/dto/UpdateCourseDto';
 import { Type } from 'class-transformer';
 import { ModuleEntity } from '../../database/schemas/module.schema';
-import { CourseArchive } from 'src/database/schemas/course.archive.schema';
+import { CourseArchive } from '../../database/schemas/course.archive.schema';
 import { AddRatingDto } from './dto/AddRatingDto';
 
 @Injectable()

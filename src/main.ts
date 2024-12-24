@@ -5,37 +5,44 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
-async function bootstrap() {
+let cachedApp;
+
+async function bootstrapServer() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: 'http://localhost:3000', 
+    origin: 'http://localhost:3000',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, 
+    credentials: true,
   });
-  
+
   app.setGlobalPrefix(AppConfig.apiPrefix);
 
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, 
-    forbidNonWhitelisted: true, 
-    transform: true, 
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
   }));
-  
+
   app.useGlobalFilters(new AllExceptionsFilter());
 
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API documentation for the project')
     .setVersion('1.0')
-    .addBearerAuth() 
+    .addBearerAuth()
     .build();
-  
+
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup(`${AppConfig.apiPrefix}/docs`, app, documentFactory);
 
-  await app.listen(AppConfig.port);
-  console.log(`Application running on: http://localhost:${AppConfig.port}/${AppConfig.apiPrefix}`);
-  console.log(`Swagger docs available at: http://localhost:${AppConfig.port}/${AppConfig.apiPrefix}/docs`);
+  await app.init();
+  cachedApp = app;
 }
-bootstrap();
+
+export default async (req, res) => {
+  if (!cachedApp) {
+    await bootstrapServer();
+  }
+  return cachedApp.getHttpAdapter().getInstance()(req, res);
+};

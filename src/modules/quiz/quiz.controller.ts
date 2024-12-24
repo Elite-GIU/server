@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Param, UseGuards, Body } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { StudentGuard } from 'src/common/guards/student.guard';
+import { StudentGuard } from '../../common/guards/student.guard';
 import { ApiResponse, ApiOperation, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { GetUser } from '../../common/decorators/getUser.decorator';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
 
 @Controller()
 export class QuizController {

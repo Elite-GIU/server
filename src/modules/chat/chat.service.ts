@@ -1,19 +1,19 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Model, ObjectId, Schema, Types } from 'mongoose';
-import { RoomMessage } from 'src/database/schemas/roomMessage.schema';
+import { RoomMessage } from '../../database/schemas/roomMessage.schema';
 import { MessageDto } from './dto/MessageDto';
 import { ThreadDto } from './dto/ThreadDto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from 'src/database/schemas/user.schema';
-import { Course } from 'src/database/schemas/course.schema';
-import { ThreadMessage } from 'src/database/schemas/threadMessage.schema';
-import { ThreadMessageReply } from 'src/database/schemas/threadMessageReply.schema';
-import { Thread } from 'src/database/schemas/thread.schema';
-import { StudyRoom } from 'src/database/schemas/studyRoom.schema';
+import { User } from '../../database/schemas/user.schema';
+import { Course } from '../../database/schemas/course.schema';
+import { ThreadMessage } from '../../database/schemas/threadMessage.schema';
+import { ThreadMessageReply } from '../../database/schemas/threadMessageReply.schema';
+import { Thread } from '../../database/schemas/thread.schema';
+import { StudyRoom } from '../../database/schemas/studyRoom.schema';
 import { RoomDto } from './dto/RoomDto';
-import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
+import { StudentCourse } from '../../database/schemas/studentCourse.schema';
 import { ThreadEditDto } from './dto/ThreadEditDto';
-import { Notification } from 'src/database/schemas/notification.schema';
+import { Notification } from '../../database/schemas/notification.schema';
 
 @Injectable()
 export class ChatService {

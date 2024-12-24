@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RoleGuard } from './role.guard';
-import { LogsService } from 'src/modules/logs/logs.service';
+import { LogsService } from '../../modules/logs/logs.service';
 
 @Injectable()
 export class AdminGuard extends RoleGuard {

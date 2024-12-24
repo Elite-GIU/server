@@ -2,14 +2,14 @@ import { Controller, Post, Get, Put, Delete, Param, Body } from '@nestjs/common'
 import { QuestionService } from './question.service'; 
 import { CreateQuestionDto } from './dto/CreateQuestionDto';
 import { UpdateQuestionDto } from './dto/UpdateQuestionDto';
-import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
-import { InstructorGuard } from 'src/common/guards/instructor.guard';
+import { JwtAuthGuard } from '../../modules/auth/jwt-auth.guard';
+import { InstructorGuard } from '../../common/guards/instructor.guard';
 import { ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
-import { AssignedParam } from 'src/common/decorators/assignedParam.decorator';
-import { CheckAssignedValidatorPipe } from 'src/common/pipes/check-assigned-validator.pipe';
-import { ExistParam } from 'src/common/decorators/existParam.decorator';
-import { CheckExistValidatorPipe } from 'src/common/pipes/check-exist-validator.pipe';
+import { AssignedParam } from '../../common/decorators/assignedParam.decorator';
+import { CheckAssignedValidatorPipe } from '../../common/pipes/check-assigned-validator.pipe';
+import { ExistParam } from '../../common/decorators/existParam.decorator';
+import { CheckExistValidatorPipe } from '../../common/pipes/check-exist-validator.pipe';
 
 @Controller('question')
 export class QuestionController {

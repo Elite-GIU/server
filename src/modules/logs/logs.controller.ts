@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { LogsService } from './logs.service';
-import { Log } from 'src/database/schemas/log.schema';
+import { Log } from '../../database/schemas/log.schema';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators/public.decorator';
-import { AdminGuard } from 'src/common/guards/admin.guard';
+import { Public } from '../../common/decorators/public.decorator';
+import { AdminGuard } from '../../common/guards/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Logs')

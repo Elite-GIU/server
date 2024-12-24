@@ -11,12 +11,12 @@ import { Notification } from '../../database/schemas/notification.schema';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UpdateContentDto } from './dto/UpdateContentDto';
-import { QuizResponse } from 'src/database/schemas/quizResponse.schema';
+import { QuizResponse } from '../../database/schemas/quizResponse.schema';
 import { plainToInstance } from 'class-transformer';
 import { UpdateModuleAssessmentDto } from './dto/UpdateModuleAssessmentDto';
 import { ChatService } from '../chat/chat.service';
-import { Course } from 'src/database/schemas/course.schema';
-import { StudentCourse } from 'src/database/schemas/studentCourse.schema';
+import { Course } from '../../database/schemas/course.schema';
+import { StudentCourse } from '../../database/schemas/studentCourse.schema';
 @Injectable()
 export class ModuleService {
   constructor(
