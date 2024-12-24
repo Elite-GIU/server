@@ -11,7 +11,7 @@ export class BackupService{
     private backupDir: string;
 
     constructor() {
-        this.backupDir = path.join(process.cwd(), '/tmp');
+        this.backupDir = '/tmp';
         this.ensureBackupDirectory();
         this.scheduleDailyBackup();
     }
